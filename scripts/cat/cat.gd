@@ -102,6 +102,7 @@ var _lift: float = 0.0
 
 func _ready() -> void:
 	add_to_group("cat")
+	smooth_ground = true
 	if Engine.is_editor_hint():
 		return
 	_rng.randomize()
@@ -153,6 +154,7 @@ func _process(delta: float) -> void:
 	# sube al suelo del santuario al entrar
 	var floor_h: float = Interactable.SH_FLOOR if _in_shelter() else 0.0
 	_lift = move_toward(_lift, floor_h, delta * 30.0)
+	_update_position() # suaviza subir/bajar el talud de pasto
 	queue_redraw()
 
 

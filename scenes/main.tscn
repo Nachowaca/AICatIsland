@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/world/water.gd" id="9_water"]
 [ext_resource type="Script" path="res://scripts/world/discoverable.gd" id="10_disc"]
 [ext_resource type="Script" path="res://scripts/world/meadow.gd" id="11_meadow"]
+[ext_resource type="Script" path="res://scripts/world/shore_decor.gd" id="12_shore"]
 
 [node name="Main" type="Node2D" unique_id=176245956]
 script = ExtResource("1_game")
@@ -23,6 +24,9 @@ script = ExtResource("9_water")
 
 [node name="Island" type="Node2D" parent="." unique_id=1492406654]
 script = ExtResource("3_isl")
+
+[node name="ShoreDecor" type="Node2D" parent="."]
+script = ExtResource("12_shore")
 
 [node name="Meadow" type="Node2D" parent="."]
 script = ExtResource("11_meadow")
@@ -69,7 +73,7 @@ position = Vector2(-227.20001, 577.6)
 script = ExtResource("4_int")
 kind = 4
 display_name = "Torii"
-grid_pos = Vector2(14.5, 21.6)
+grid_pos = Vector2(14.8, 22.4)
 elevated = false
 
 [node name="SakuraA" type="Node2D" parent="Entities" unique_id=352400616]
@@ -100,7 +104,7 @@ position = Vector2(-188.8, 327.6)
 script = ExtResource("5_tree")
 kind = 1
 tree_scale = 0.9
-grid_pos = Vector2(7.6, 13.5)
+grid_pos = Vector2(8.6, 13.4)
 
 [node name="Momiji" type="Node2D" parent="Entities" unique_id=687187739]
 position = Vector2(137.59998, 522.8)
@@ -113,7 +117,7 @@ position = Vector2(124.8, 295.6)
 script = ExtResource("5_tree")
 kind = 3
 shade_radius = 1.2
-grid_pos = Vector2(10.5, 7.2)
+grid_pos = Vector2(14.2, 7.4)
 
 [node name="Fish" type="Node2D" parent="Entities" unique_id=1726210071]
 position = Vector2(310.40002, 555.2)
@@ -129,13 +133,13 @@ grid_pos = Vector2(15.5, 6.5)
 [node name="BuriedBell" type="Node2D" parent="Entities"]
 script = ExtResource("10_disc")
 kind = 1
-grid_pos = Vector2(10.4, 8.4)
+grid_pos = Vector2(15.0, 7.9)
 
 [node name="CrabRock" type="Node2D" parent="Entities"]
 script = ExtResource("10_disc")
 kind = 2
 buried = false
-grid_pos = Vector2(8.5, 19.5)
+grid_pos = Vector2(11.5, 21.3)
 
 [node name="Matatabi" type="Node2D" parent="Entities"]
 script = ExtResource("10_disc")
@@ -147,7 +151,7 @@ grid_pos = Vector2(18.5, 17.8)
 script = ExtResource("10_disc")
 kind = 4
 buried = false
-grid_pos = Vector2(7.9, 14.3)
+grid_pos = Vector2(9.0, 14.6)
 
 [node name="Cat" type="Node2D" parent="Entities" unique_id=1018439464]
 position = Vector2(-16, 414)

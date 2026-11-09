@@ -5,9 +5,6 @@ extends Node2D
 ## isla y se lo pasa al shader res://shaders/water.gdshader.
 
 const SHADER = preload("res://shaders/water.gdshader")
-const PAD = 8          # celdas de margen alrededor del mapa
-const RES = 6          # píxeles de textura por celda
-const MAX_DIST = 8.0   # distancia máxima codificada (celdas)
 const EXTENT = 40.0    # cuánto mar dibujar alrededor (celdas)
 
 @export var island_path: NodePath = ^"../Island"
@@ -36,54 +33,21 @@ func _process(_delta: float) -> void:
 		_mat.set_shader_parameter("night", _day_night.night_factor())
 
 
+## Pasa al shader la costa suave de la isla (R = distancia con signo,
+## G = máscara de pasto) como textura flotante.
 func _rebuild() -> void:
-	if _island == null or _mat == null:
+	if _island == null or _mat == null or _island.field_n == 0:
 		return
-	var span: int = _island.map_size + PAD * 2
-	var n: int = span * RES
-	var inf: float = 1e9
-	var field: PackedFloat32Array = PackedFloat32Array()
-	field.resize(n * n)
-	for py in n:
-		for px in n:
-			var cell: Vector2i = Vector2i(floori(float(px) / RES) - PAD, floori(float(py) / RES) - PAD)
-			field[py * n + px] = 0.0 if _island.is_land_cell(cell) else inf
-	# transformada de distancia por chaflán (dos pasadas)
-	var d1: float = 1.0
-	var d2: float = 1.4142
-	for y in n:
-		for x in n:
-			var i: int = y * n + x
-			var v: float = field[i]
-			if v == 0.0:
-				continue
-			if x > 0: v = minf(v, field[i - 1] + d1)
-			if y > 0:
-				v = minf(v, field[i - n] + d1)
-				if x > 0: v = minf(v, field[i - n - 1] + d2)
-				if x < n - 1: v = minf(v, field[i - n + 1] + d2)
-			field[i] = v
-	for y in range(n - 1, -1, -1):
-		for x in range(n - 1, -1, -1):
-			var i: int = y * n + x
-			var v: float = field[i]
-			if v == 0.0:
-				continue
-			if x < n - 1: v = minf(v, field[i + 1] + d1)
-			if y < n - 1:
-				v = minf(v, field[i + n] + d1)
-				if x < n - 1: v = minf(v, field[i + n + 1] + d2)
-				if x > 0: v = minf(v, field[i + n - 1] + d2)
-			field[i] = v
-	var norm: PackedFloat32Array = PackedFloat32Array()
-	norm.resize(n * n)
+	var n: int = _island.field_n
+	var data: PackedFloat32Array = PackedFloat32Array()
+	data.resize(n * n * 2)
 	for i in n * n:
-		norm[i] = clampf(field[i] / float(RES) / MAX_DIST, 0.0, 1.0)
-	var img: Image = Image.create_from_data(n, n, false, Image.FORMAT_RF, norm.to_byte_array())
-	_mat.set_shader_parameter("dist_tex", ImageTexture.create_from_image(img))
-	_mat.set_shader_parameter("grid_span", float(span))
-	_mat.set_shader_parameter("grid_pad", float(PAD))
-	_mat.set_shader_parameter("max_dist", MAX_DIST)
+		data[i * 2] = _island.coast_sdf[i]
+		data[i * 2 + 1] = _island.grass_mask[i]
+	var img: Image = Image.create_from_data(n, n, false, Image.FORMAT_RGF, data.to_byte_array())
+	_mat.set_shader_parameter("field_tex", ImageTexture.create_from_image(img))
+	_mat.set_shader_parameter("grid_span", float(_island.map_size + Island.FIELD_PAD * 2))
+	_mat.set_shader_parameter("grid_pad", float(Island.FIELD_PAD))
 	queue_redraw()
 
 

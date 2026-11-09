@@ -8,14 +8,7 @@ extends Node2D
 enum T { DEEP, SHALLOW, SAND, GRASS, MOSS }
 
 const LAND_H = 10.0
-const SAND_H = 4.0
 const INK = Color(0.16, 0.11, 0.1, 0.85)
-const SAND_COL = Color(0.94, 0.85, 0.64)
-const SAND_SIDE_L = Color(0.8, 0.67, 0.46)
-const SAND_SIDE_R = Color(0.7, 0.57, 0.38)
-const GRASS_COL = Color(0.5, 0.69, 0.37)
-const GRASS_COL2 = Color(0.58, 0.74, 0.4)
-const MOSS_COL = Color(0.36, 0.55, 0.32)
 const EARTH_L = Color(0.55, 0.4, 0.27)
 const EARTH_R = Color(0.45, 0.32, 0.21)
 const DIRS = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
@@ -77,25 +70,49 @@ func generate() -> void:
 	var noise: FastNoiseLite = FastNoiseLite.new()
 	noise.seed = seed_value
 	noise.frequency = 0.09
+	# ruido de "tipo de costa": dónde hay playas anchas, estrechas o acantilado
+	var beach: FastNoiseLite = FastNoiseLite.new()
+	beach.seed = seed_value * 13 + 5
+	beach.frequency = 0.09
 	var c: Vector2 = Vector2(map_size, map_size) * 0.5
 	for x in map_size:
 		for y in map_size:
 			var p: Vector2 = Vector2(x + 0.5, y + 0.5)
 			var d: float = p.distance_to(c) / island_radius
 			var h: float = 1.0 - d + noise.get_noise_2d(x, y) * 0.3
+			var bw: float = beach.get_noise_2d(x, y) + 0.12
+			var grass_th: float = 0.2 + maxf(bw, 0.0) * 0.55   # playas anchas
+			if bw < -0.3:
+				grass_th = 0.1                                  # acantilado de pasto
+			var sand_th: float = 0.06 - maxf(bw, 0.0) * 0.2      # la arena avanza mar adentro
 			var t: int = T.DEEP
 			if h > 0.55:
 				t = T.MOSS
-			elif h > 0.2:
+			elif h > grass_th:
 				t = T.GRASS
-			elif h > 0.06:
+			elif h > sand_th:
 				t = T.SAND
 			elif h > -0.2:
 				t = T.SHALLOW
 			tiles[Vector2i(x, y)] = t
 			elev[Vector2i(x, y)] = h
-			if t >= T.SAND:
-				land_cells.append(Vector2i(x, y))
+	_remove_grass_specks(4)
+	_build_coast_field()
+	# Reclasifica: la costa visible (campo suave) manda sobre las baldosas
+	for cell: Vector2i in tiles:
+		var t2: int = tiles[cell]
+		if t2 >= T.GRASS:
+			continue
+		var s: float = sdf_at(Vector2(cell) + Vector2(0.5, 0.5))
+		if s > 0.2:
+			tiles[cell] = T.SAND
+		elif s > -1.6:
+			tiles[cell] = T.SHALLOW
+		else:
+			tiles[cell] = T.DEEP
+	for cell2: Vector2i in tiles:
+		if tiles[cell2] >= T.SAND:
+			land_cells.append(cell2)
 	_astar = AStarGrid2D.new()
 	_astar.region = Rect2i(0, 0, map_size, map_size)
 	_astar.cell_size = Vector2.ONE
@@ -104,11 +121,177 @@ func generate() -> void:
 	for cell: Vector2i in tiles:
 		_astar.set_point_solid(cell, not is_land_cell(cell))
 	for cell: Vector2i in tiles:
-		if tiles[cell] != T.SHALLOW:
+		if tiles[cell] >= T.SAND:
 			continue
 		for dir: Vector2i in DIRS:
 			if is_land_cell(cell + dir):
 				shore_pairs.append([Vector2(cell) + Vector2(0.5, 0.5), Vector2(cell + dir) + Vector2(0.5, 0.5)])
+
+
+## Los grupos de pasto muy pequeños parecen cajas sueltas: se vuelven arena.
+func _remove_grass_specks(min_size: int) -> void:
+	var seen: Dictionary = {}
+	for start: Vector2i in tiles:
+		if seen.has(start) or tiles[start] < T.GRASS:
+			continue
+		var comp: Array[Vector2i] = []
+		var stack: Array[Vector2i] = [start]
+		seen[start] = true
+		while not stack.is_empty():
+			var c: Vector2i = stack.pop_back()
+			comp.append(c)
+			for d: Vector2i in DIRS:
+				var nb: Vector2i = c + d
+				if not seen.has(nb) and tiles.get(nb, T.DEEP) >= T.GRASS:
+					seen[nb] = true
+					stack.append(nb)
+		if comp.size() < min_size:
+			for c2: Vector2i in comp:
+				tiles[c2] = T.SAND
+
+
+# ---------------------------------------------------------------- campo de costa
+
+const FIELD_PAD = 8   # celdas de margen alrededor del mapa
+const FIELD_RES = 6   # muestras por celda
+
+## Distancia con signo a la línea de costa (en celdas): + tierra, − agua.
+var coast_sdf: PackedFloat32Array = PackedFloat32Array()
+## 1 donde hay pasto (para sombras del talud y reflejos en el shader).
+var grass_mask: PackedFloat32Array = PackedFloat32Array()
+var field_n: int = 0
+
+
+func _chamfer(f: PackedFloat32Array, n: int) -> void:
+	var d1: float = 1.0
+	var d2: float = 1.4142
+	for y in n:
+		for x in n:
+			var i: int = y * n + x
+			var v: float = f[i]
+			if v == 0.0:
+				continue
+			if x > 0: v = minf(v, f[i - 1] + d1)
+			if y > 0:
+				v = minf(v, f[i - n] + d1)
+				if x > 0: v = minf(v, f[i - n - 1] + d2)
+				if x < n - 1: v = minf(v, f[i - n + 1] + d2)
+			f[i] = v
+	for y in range(n - 1, -1, -1):
+		for x in range(n - 1, -1, -1):
+			var i: int = y * n + x
+			var v: float = f[i]
+			if v == 0.0:
+				continue
+			if x < n - 1: v = minf(v, f[i + 1] + d1)
+			if y < n - 1:
+				v = minf(v, f[i + n] + d1)
+				if x < n - 1: v = minf(v, f[i + n + 1] + d2)
+				if x > 0: v = minf(v, f[i + n - 1] + d2)
+			f[i] = v
+
+
+func _box_blur(f: PackedFloat32Array, n: int, r: int) -> PackedFloat32Array:
+	var tmp: PackedFloat32Array = PackedFloat32Array()
+	tmp.resize(n * n)
+	var out: PackedFloat32Array = PackedFloat32Array()
+	out.resize(n * n)
+	var w: float = 1.0 / float(2 * r + 1)
+	for y in n:
+		var acc: float = 0.0
+		for k in range(-r, r + 1):
+			acc += f[y * n + clampi(k, 0, n - 1)]
+		for x in n:
+			tmp[y * n + x] = acc * w
+			acc += f[y * n + clampi(x + r + 1, 0, n - 1)] - f[y * n + clampi(x - r, 0, n - 1)]
+	for x in n:
+		var acc2: float = 0.0
+		for k in range(-r, r + 1):
+			acc2 += tmp[clampi(k, 0, n - 1) * n + x]
+		for y in n:
+			out[y * n + x] = acc2 * w
+			acc2 += tmp[clampi(y + r + 1, 0, n - 1) * n + x] - tmp[clampi(y - r, 0, n - 1) * n + x]
+	return out
+
+
+## Construye la costa suave: distancia con signo a partir de las baldosas,
+## suavizada (esquinas redondas) y deformada con ruido (bahías y puntas).
+func _build_coast_field() -> void:
+	var n: int = (map_size + FIELD_PAD * 2) * FIELD_RES
+	field_n = n
+	var inf: float = 1e9
+	var out_d: PackedFloat32Array = PackedFloat32Array()
+	var in_d: PackedFloat32Array = PackedFloat32Array()
+	out_d.resize(n * n)
+	in_d.resize(n * n)
+	grass_mask.resize(n * n)
+	for py in n:
+		for px in n:
+			var cell: Vector2i = Vector2i(floori(float(px) / FIELD_RES) - FIELD_PAD, floori(float(py) / FIELD_RES) - FIELD_PAD)
+			var t: int = tiles.get(cell, T.DEEP)
+			var i: int = py * n + px
+			var land: bool = t >= T.SAND
+			out_d[i] = 0.0 if land else inf
+			in_d[i] = inf if land else 0.0
+			grass_mask[i] = 1.0 if t >= T.GRASS else 0.0
+	_chamfer(out_d, n)
+	_chamfer(in_d, n)
+	var raw: PackedFloat32Array = PackedFloat32Array()
+	raw.resize(n * n)
+	for i in n * n:
+		raw[i] = (in_d[i] - out_d[i]) / float(FIELD_RES)
+	raw = _box_blur(_box_blur(raw, n, 3), n, 3)
+	var warp: FastNoiseLite = FastNoiseLite.new()
+	warp.seed = seed_value * 31 + 7
+	warp.frequency = 0.4
+	warp.fractal_octaves = 3
+	coast_sdf.resize(n * n)
+	for py in n:
+		for px in n:
+			var i: int = py * n + px
+			var g: Vector2 = Vector2((float(px) + 0.5) / FIELD_RES - FIELD_PAD, (float(py) + 0.5) / FIELD_RES - FIELD_PAD)
+			var s: float = raw[i]
+			var near: float = 1.0 - smoothstep(1.5, 3.0, absf(s))
+			s += warp.get_noise_2d(g.x, g.y) * 0.55 * near
+			if grass_mask[i] > 0.5:
+				s = maxf(s, 0.18)   # la costa nunca se mete bajo el pasto
+			coast_sdf[i] = s
+
+
+## Distancia con signo a la costa en un punto de rejilla (interpolada).
+func sdf_at(g: Vector2) -> float:
+	if field_n == 0:
+		return 1.0 if is_land_cell(Vector2i(floori(g.x), floori(g.y))) else -1.0
+	var fx: float = (g.x + FIELD_PAD) * FIELD_RES - 0.5
+	var fy: float = (g.y + FIELD_PAD) * FIELD_RES - 0.5
+	var x0: int = clampi(floori(fx), 0, field_n - 2)
+	var y0: int = clampi(floori(fy), 0, field_n - 2)
+	var tx: float = clampf(fx - float(x0), 0.0, 1.0)
+	var ty: float = clampf(fy - float(y0), 0.0, 1.0)
+	var i: int = y0 * field_n + x0
+	var top: float = lerpf(coast_sdf[i], coast_sdf[i + 1], tx)
+	var bot: float = lerpf(coast_sdf[i + field_n], coast_sdf[i + field_n + 1], tx)
+	return lerpf(top, bot, ty)
+
+
+## Punto sobre la línea entre a (tierra) y b (agua) donde la costa vale `target`.
+func along_coast(land: Vector2, water: Vector2, target: float) -> Vector2:
+	var best: Vector2 = land
+	for k in 21:
+		var p: Vector2 = land.lerp(water, float(k) / 20.0)
+		if sdf_at(p) < target:
+			return best
+		best = p
+	return best
+
+
+## Para una pareja de orilla: [sitio en tierra para comer/mirar, sitio en el agua].
+func shore_spots(pair: Array) -> Array:
+	var water: Vector2 = pair[0]
+	var land: Vector2 = pair[1]
+	var on_land: Vector2 = along_coast(land, water, 0.3)
+	var in_water: Vector2 = along_coast(land, water + (water - land) * 0.6, -0.3)
+	return [on_land, in_water]
 
 
 func tile_at(g: Vector2) -> int:
@@ -121,7 +304,9 @@ func is_land_cell(c: Vector2i) -> bool:
 
 
 func is_walkable(g: Vector2) -> bool:
-	return is_land_cell(Vector2i(floori(g.x), floori(g.y)))
+	if not is_land_cell(Vector2i(floori(g.x), floori(g.y))) and sdf_at(g) < 0.15:
+		return false
+	return sdf_at(g) > 0.12
 
 
 ## Camino por tierra (centros de celda) terminando exactamente en `to`.
@@ -153,6 +338,8 @@ func random_land_point(rng: RandomNumberGenerator, near: Vector2 = Vector2(-1, -
 	for i in 40:
 		var cell: Vector2i = land_cells[rng.randi() % land_cells.size()]
 		var p: Vector2 = Vector2(cell) + Vector2(rng.randf_range(0.2, 0.8), rng.randf_range(0.2, 0.8))
+		if not is_walkable(p):
+			continue
 		if near.x < 0.0 or p.distance_to(near) <= max_dist:
 			return p
 	return near
@@ -161,9 +348,7 @@ func random_land_point(rng: RandomNumberGenerator, near: Vector2 = Vector2(-1, -
 ## Punto en tierra al borde del agua. Devuelve [punto_tierra, punto_agua].
 func random_shore(rng: RandomNumberGenerator) -> Array:
 	var pair: Array = shore_pairs[rng.randi() % shore_pairs.size()]
-	var water: Vector2 = pair[0]
-	var land: Vector2 = pair[1]
-	return [land.lerp(water, 0.3), water]
+	return shore_spots(pair)
 
 
 # ---------------------------------------------------------------- dibujo
@@ -284,10 +469,10 @@ func _draw_grass_lip(cell: Vector2i) -> void:
 				draw_line(tip, tip + Vector2(n.x - n.y, -3.5), col.darkened(0.3), 1.0)
 
 
+## La playa está a nivel del mar (la dibuja el shader del agua); el pasto
+## forma un pequeño talud de LAND_H píxeles sobre ella.
 func cell_height(c: Vector2i) -> float:
 	var t: int = tiles.get(c, T.DEEP)
-	if t == T.SAND:
-		return SAND_H
 	if t >= T.GRASS:
 		return LAND_H
 	return 0.0
@@ -295,104 +480,53 @@ func cell_height(c: Vector2i) -> float:
 
 ## Altura del suelo (px) en una posición de rejilla; la usan las entidades.
 func height_at(g: Vector2) -> float:
-	var h: float = cell_height(Vector2i(floori(g.x), floori(g.y)))
-	return h if h > 0.0 else SAND_H
+	return cell_height(Vector2i(floori(g.x), floori(g.y)))
 
 
 func _draw_tile(x: int, y: int) -> void:
 	var cell: Vector2i = Vector2i(x, y)
 	var t: int = tiles[cell]
-	if t < T.SAND:
-		return
+	if t < T.GRASS:
+		return # la arena y el agua las pinta el shader del mar
 	var j: float = _hash(x, y)
 	var fx: float = float(x)
 	var fy: float = float(y)
-
-	var h: float = cell_height(cell)
-	var top: Color
+	var h: float = LAND_H
 	var side_l: Color = EARTH_L
 	var side_r: Color = EARTH_R
-	match t:
-		T.SAND:
-			top = SAND_COL.lerp(Color(0.98, 0.9, 0.72), j * 0.4)
-			side_l = SAND_SIDE_L
-			side_r = SAND_SIDE_R
-		T.GRASS:
-			top = GRASS_COL.lerp(GRASS_COL2, j * 0.6)
-		_:
-			top = MOSS_COL.lerp(GRASS_COL, j * 0.25)
-
-	var ink: Color = Color(INK, 0.45) if t == T.SAND else INK
 	var h_y: float = cell_height(cell + Vector2i(0, 1))
 	var h_x: float = cell_height(cell + Vector2i(1, 0))
-	# caras laterales visibles (hacia +y y +x) desde la altura del vecino
+	var water_y: bool = sdf_at(Vector2(fx + 0.5, fy + 1.15)) < 0.0
+	var water_x: bool = sdf_at(Vector2(fx + 1.15, fy + 0.5)) < 0.0
+	# talud de tierra visible (caras +y y +x) con estratos y raíces
 	if h_y < h:
 		draw_colored_polygon(PackedVector2Array([_p(fx, fy + 1, h), _p(fx + 1, fy + 1, h), _p(fx + 1, fy + 1, h_y), _p(fx, fy + 1, h_y)]), side_l)
-		if h_y == 0.0:
-			# franja mojada en la base, donde rompe el agua
-			draw_colored_polygon(PackedVector2Array([_p(fx, fy + 1, 2.0), _p(fx + 1, fy + 1, 2.0), _p(fx + 1, fy + 1), _p(fx, fy + 1)]), side_l.darkened(0.3))
+		draw_line(_p(fx, fy + 1, 4.0 + j * 2.0), _p(fx + 1, fy + 1, 4.5 + j), side_l.darkened(0.15), 1.0)
+		if water_y:
+			draw_colored_polygon(PackedVector2Array([_p(fx, fy + 1, 2.5), _p(fx + 1, fy + 1, 2.5), _p(fx + 1, fy + 1), _p(fx, fy + 1)]), side_l.darkened(0.35))
 	if h_x < h:
 		draw_colored_polygon(PackedVector2Array([_p(fx + 1, fy + 1, h), _p(fx + 1, fy, h), _p(fx + 1, fy, h_x), _p(fx + 1, fy + 1, h_x)]), side_r)
-		if h_x == 0.0:
-			draw_colored_polygon(PackedVector2Array([_p(fx + 1, fy + 1, 2.0), _p(fx + 1, fy, 2.0), _p(fx + 1, fy), _p(fx + 1, fy + 1)]), side_r.darkened(0.3))
-	if t == T.SAND:
-		draw_colored_polygon(PackedVector2Array([_p(fx, fy, h), _p(fx + 1, fy, h), _p(fx + 1, fy + 1, h), _p(fx, fy + 1, h)]), top)
-	else:
-		# pasto: 2x2 sub-quads con color por vértice → degradados suaves sin damero
-		for sx in 2:
-			for sy in 2:
-				var x0: float = fx + float(sx) * 0.5
-				var y0: float = fy + float(sy) * 0.5
-				var corners: Array[Vector2] = [Vector2(x0, y0), Vector2(x0 + 0.5, y0), Vector2(x0 + 0.5, y0 + 0.5), Vector2(x0, y0 + 0.5)]
-				var pts: PackedVector2Array = PackedVector2Array()
-				var cols: PackedColorArray = PackedColorArray()
-				for cg: Vector2 in corners:
-					pts.append(_p(cg.x, cg.y, h))
-					cols.append(grass_color(cg))
-				draw_polygon(pts, cols)
-
-	# Arena mojada: franjas más oscuras en los bordes que tocan el agua
-	if t == T.SAND:
-		var wet: Color = Color(0.62, 0.52, 0.36, 0.28)
-		var wet2: Color = Color(0.55, 0.45, 0.3, 0.32)
-		for dir: Vector2i in DIRS:
-			if is_land_cell(cell + dir):
-				continue
-			for band: Array in [[0.32, wet], [0.14, wet2]]:
-				var w: float = band[0]
-				var poly: PackedVector2Array
-				match dir:
-					Vector2i(0, 1):
-						poly = PackedVector2Array([_p(fx, fy + 1, h), _p(fx + 1, fy + 1, h), _p(fx + 1, fy + 1 - w, h), _p(fx, fy + 1 - w, h)])
-					Vector2i(0, -1):
-						poly = PackedVector2Array([_p(fx, fy, h), _p(fx + 1, fy, h), _p(fx + 1, fy + w, h), _p(fx, fy + w, h)])
-					Vector2i(1, 0):
-						poly = PackedVector2Array([_p(fx + 1, fy, h), _p(fx + 1, fy + 1, h), _p(fx + 1 - w, fy + 1, h), _p(fx + 1 - w, fy, h)])
-					_:
-						poly = PackedVector2Array([_p(fx, fy, h), _p(fx, fy + 1, h), _p(fx + w, fy + 1, h), _p(fx + w, fy, h)])
-				draw_colored_polygon(poly, band[1])
-
-	# Bordes de tinta donde el terreno baja
+		draw_line(_p(fx + 1, fy, 4.5 + j), _p(fx + 1, fy + 1, 4.0 + j * 2.0), side_r.darkened(0.15), 1.0)
+		if water_x:
+			draw_colored_polygon(PackedVector2Array([_p(fx + 1, fy + 1, 2.5), _p(fx + 1, fy, 2.5), _p(fx + 1, fy), _p(fx + 1, fy + 1)]), side_r.darkened(0.35))
+	# pasto: 2x2 sub-quads con color por vértice → degradados suaves sin damero
+	for sx in 2:
+		for sy in 2:
+			var x0: float = fx + float(sx) * 0.5
+			var y0: float = fy + float(sy) * 0.5
+			var corners: Array[Vector2] = [Vector2(x0, y0), Vector2(x0 + 0.5, y0), Vector2(x0 + 0.5, y0 + 0.5), Vector2(x0, y0 + 0.5)]
+			var pts: PackedVector2Array = PackedVector2Array()
+			var cols: PackedColorArray = PackedColorArray()
+			for cg: Vector2 in corners:
+				pts.append(_p(cg.x, cg.y, h))
+				cols.append(grass_color(cg))
+			draw_polygon(pts, cols)
+	# tinta en la base del talud
 	if h_y < h:
-		if t == T.SAND:
-			draw_line(_p(fx, fy + 1, h), _p(fx + 1, fy + 1, h), ink, 1.2)
-		draw_line(_p(fx, fy + 1, h_y), _p(fx + 1, fy + 1, h_y), ink, 1.0)
+		draw_line(_p(fx, fy + 1, 0), _p(fx + 1, fy + 1, 0), Color(INK, 0.55), 1.0)
 	if h_x < h:
-		if t == T.SAND:
-			draw_line(_p(fx + 1, fy, h), _p(fx + 1, fy + 1, h), ink, 1.2)
-		draw_line(_p(fx + 1, fy, h_x), _p(fx + 1, fy + 1, h_x), ink, 1.0)
-	if t == T.SAND:
-		if cell_height(cell + Vector2i(-1, 0)) < h:
-			draw_line(_p(fx, fy, h), _p(fx, fy + 1, h), ink, 1.2)
-		if cell_height(cell + Vector2i(0, -1)) < h:
-			draw_line(_p(fx, fy, h), _p(fx + 1, fy, h), ink, 1.2)
-
-	# Detalles
+		draw_line(_p(fx + 1, fy, 0), _p(fx + 1, fy + 1, 0), Color(INK, 0.55), 1.0)
+	# piedra musgosa ocasional
 	var c: Vector2 = _p(fx + 0.5, fy + 0.5, h)
-	if t == T.GRASS or t == T.MOSS:
-		if t == T.MOSS and j < 0.08:
-			draw_colored_polygon(PackedVector2Array([c + Vector2(-6, 0), c + Vector2(-3, -4), c + Vector2(4, -4), c + Vector2(7, 0), c + Vector2(2, 2)]), Color(0.55, 0.55, 0.52))
-	elif t == T.SAND and j > 0.82:
-		draw_circle(c + Vector2((j - 0.9) * 80.0, 2), 1.5, Color(0.7, 0.66, 0.6))
-		draw_circle(c + Vector2((j - 0.9) * 80.0 + 4, 3), 1.0, Color(0.95, 0.75, 0.7))
-
+	if t == T.MOSS and j < 0.08:
+		draw_colored_polygon(PackedVector2Array([c + Vector2(-6, 0), c + Vector2(-3, -4), c + Vector2(4, -4), c + Vector2(7, 0), c + Vector2(2, 2)]), Color(0.55, 0.55, 0.52))

@@ -11,7 +11,12 @@ Leyenda: `[x]` hecho · `[~]` en curso / versión 1 · `[ ]` pendiente
 - [x] Isla procedural isométrica (arena, hierba, musgo) con estilo de grabado ukiyo-e
 - [x] Árboles japoneses: sakura, momiji, pino niwaki, bambú (copas tipo nube)
 - [x] Mar con shader: profundidad, olas hacia la costa, espuma, cáusticas, reflejos, destellos
-- [x] Playa más baja que la hierba + arena mojada
+- [x] Playas reales: costa suave e irregular (campo de distancia + ruido), anchos de 1 a 4 celdas,
+      tramos de acantilado de pasto, arena a nivel del mar con ondas, guijarros y banda mojada
+- [x] Oleaje sobre la playa: el agua sube y se retira al ritmo de las crestas, con espuma
+      en el frente, burbujas y encaje que queda en la arena
+- [x] Vida de playa (`shore_decor.gd`): rocas con anillos de espuma, algas, maderas, conchas y estrellas de mar
+- [x] El gato baja y sube el talud de pasto suavemente; pesca desde la orilla real
 - [x] Pasto irregular estilo grabado: manchas de color suaves, borde festoneado sobre la arena,
       matas, susuki, flores (nadeshiko, kikyō…) y trébol meciéndose con viento y ráfagas (`meadow.gd` + `grass_sway.gdshader`)
 - [x] Ciclo día/noche (4 min) con faroles y luces nocturnas
@@ -75,6 +80,8 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [ ] Niebla al amanecer
 
 ## 6. Técnica / organización
+- [ ] Medir FPS fuera del editor (en la pestaña Game integrada siempre marca ~30) y optimizar si hace falta
+- [ ] Elegir otra semilla o tamaño de isla desde un menú (todo se recoloca solo salvo los objetos de la escena)
 - [x] Repositorio en GitHub: https://github.com/Nachowaca/AICatIsland (README + .gitignore)
 - [ ] Guardar también el estado del mundo (objetos descubiertos)
 - [ ] Panel de "experimento": comparar gatos, gráficas de necesidades en el tiempo

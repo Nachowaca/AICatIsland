@@ -2,7 +2,7 @@ extends Node
 ## Vista previa ampliada de la isla (para revisar detalle de arte).
 
 @export var zoom: float = 2.6
-@export var grid_focus: Vector2 = Vector2(10.5, 16.0)
+@export var grid_focus: Vector2 = Vector2(9.5, 19.5)
 
 
 func _ready() -> void:

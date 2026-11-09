@@ -22,11 +22,20 @@ func _enter_tree() -> void:
 	_update_position()
 
 
+## Si es true, la altura cambia suavemente (subir/bajar el talud de pasto).
+var smooth_ground: bool = false
+var _h_cur: float = -1.0
+
+
 func _update_position() -> void:
 	var h: float = 0.0
 	if elevated:
 		h = Island.instance.height_at(grid_pos) if is_instance_valid(Island.instance) else LAND_H
-	position = Iso.to_screen(grid_pos) - Vector2(0.0, h)
+	if smooth_ground and _h_cur >= 0.0 and is_inside_tree() and not Engine.is_editor_hint():
+		_h_cur = move_toward(_h_cur, h, 1.3)
+	else:
+		_h_cur = h
+	position = Iso.to_screen(grid_pos) - Vector2(0.0, _h_cur)
 
 
 ## Punto de pantalla local para una coordenada de rejilla relativa y altura en px.

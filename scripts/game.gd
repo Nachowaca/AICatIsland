@@ -17,6 +17,7 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 func _ready() -> void:
 	_rng.randomize()
+	_snap_fish_to_shore()
 
 
 func _process(delta: float) -> void:
@@ -34,17 +35,33 @@ func _process(delta: float) -> void:
 
 
 func spawn_fish_at(pair: Array) -> void:
-	var water: Vector2 = pair[0]
-	var land: Vector2 = pair[1]
-	var pos: Vector2 = water.lerp(land, 0.3)
+	var spots: Array = island.shore_spots(pair)
+	var pos: Vector2 = spots[1]
 	for n: Node in get_tree().get_nodes_in_group("fish"):
 		if (n as Fish).grid_pos.distance_to(pos) < 0.6:
 			return
 	var f: Fish = Fish.new()
 	f.name = "Fish"
 	f.grid_pos = pos
-	f.land_spot = land.lerp(water, 0.3)
+	f.land_spot = spots[0]
 	entities.add_child(f, true)
+
+
+## Recoloca los pescados puestos a mano en la escena sobre la costa real.
+func _snap_fish_to_shore() -> void:
+	for n: Node in get_tree().get_nodes_in_group("fish"):
+		var f: Fish = n as Fish
+		var best: Array = []
+		var bd: float = INF
+		for pair: Array in island.shore_pairs:
+			var dd: float = (pair[0] as Vector2).distance_to(f.grid_pos)
+			if dd < bd:
+				bd = dd
+				best = pair
+		if not best.is_empty():
+			var spots: Array = island.shore_spots(best)
+			f.grid_pos = spots[1]
+			f.land_spot = spots[0]
 
 
 func _unhandled_input(event: InputEvent) -> void:
