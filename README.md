@@ -46,3 +46,8 @@ Pendientes.md             hoja de ruta
 ```
 
 Ver **[Pendientes.md](Pendientes.md)** para lo hecho y lo que viene.
+
+## Experimento de autonomía (activo por defecto)
+El modo experimental reemplaza el selector clásico, sin borrarlo. No incluye reglas
+como hambre→pescado o miedo→farol. Ver [EXPERIMENTO.md](EXPERIMENTO.md) para ajustar
+variables, estudiar resultados y entender sus límites.

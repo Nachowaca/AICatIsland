@@ -45,8 +45,11 @@ enum Phase { MOVING, DOING }
 
 @export var walk_speed: float = 1.4
 @export var persist_brain: bool = true
+@export var experimental_mode: bool = true
+var free_brain: FreeCatBrain
 
-var needs: Dictionary = {"hunger": 75.0, "energy": 85.0, "fun": 65.0, "safety": 90.0, "comfort": 80.0}
+
+@export var needs: Dictionary = {"hunger": 75.0, "energy": 85.0, "fun": 65.0, "safety": 90.0, "comfort": 80.0}
 var traits: Dictionary = {"curiosity": 0.5, "playfulness": 0.5, "laziness": 0.5, "bravery": 0.5}
 var learned: Dictionary = {}
 var affinity: Dictionary = {}
@@ -100,6 +103,14 @@ func _ready() -> void:
 	_island = get_tree().get_first_node_in_group("island") as Island
 	_day_night = get_tree().get_first_node_in_group("day_night") as DayNight
 	_reset_learned()
+	if experimental_mode:
+		free_brain = get_node_or_null("FreeBrain") as FreeCatBrain
+		if free_brain == null:
+			free_brain = FreeCatBrain.new()
+			free_brain.name = "FreeBrain"
+			add_child(free_brain)
+		free_brain.setup(self)
+		return
 	if persist_brain:
 		_load_brain()
 	if _day_night:
@@ -125,6 +136,14 @@ func _process(delta: float) -> void:
 	_thought_time -= delta
 	_update_needs(delta)
 	_mark_visit()
+	if experimental_mode and free_brain != null:
+		free_brain.tick(delta)
+		var free_floor: float = Interactable.SH_FLOOR if _in_shelter() else 0.0
+		_lift = move_toward(_lift, free_floor, delta * 30.0)
+		_update_position()
+		_apply_pose(delta)
+		queue_redraw()
+		return
 	if phase == Phase.MOVING:
 		_move(delta)
 	else:
@@ -153,7 +172,7 @@ func _process(delta: float) -> void:
 # ================================================================ NECESIDADES
 
 func _update_needs(delta: float) -> void:
-	var sleeping: bool = action == "sleep" and phase == Phase.DOING
+	var sleeping: bool = (action == "sleep" or (experimental_mode and pose == "sleep")) and phase == Phase.DOING
 	var walking: bool = phase == Phase.MOVING
 	needs.hunger -= 0.7 * delta * (0.5 if sleeping else 1.0)
 	if not sleeping:
@@ -269,6 +288,8 @@ func _best_interaction() -> Array:
 
 
 func action_label() -> String:
+	if experimental_mode and free_brain != null:
+		return "Ensayo: " + free_brain.label
 	if action == "interact" and _int_verb != "" and is_instance_valid(_target):
 		var v: String = Discoverable.VERB_NAMES[_int_verb]
 		return "%s%s %s" % [v.left(1).to_upper(), v.substr(1), Discoverable.KIND_NAMES.get(_int_key.get_slice(":", 0), "algo")]
@@ -441,6 +462,12 @@ func _score(a: String) -> float:
 ## Útil para ver "en qué está pensando" y para las pruebas.
 func action_scores() -> Array:
 	var out: Array = []
+	if experimental_mode and free_brain != null:
+		for option: Dictionary in free_brain.rankings.slice(0, 4):
+			var verb_name: String = Discoverable.VERB_NAMES.get(option.verb, "acicalarse")
+			var place_name: String = "suelo" if option.path == "" else String(option.path).get_file()
+			out.append([verb_name + " " + place_name, float(option.score)])
+		return out
 	for a: String in ACTIONS:
 		var s: float = _score(a)
 		if s >= 0.0:
@@ -461,6 +488,9 @@ func _best_action() -> Array:
 
 
 func _decide() -> void:
+	if experimental_mode and free_brain != null:
+		free_brain.choose()
+		return
 	var b: Array = _best_action()
 	_start(b[0])
 
@@ -857,6 +887,8 @@ func _learn_interaction() -> void:
 
 ## Evalúa el resultado de la acción y aprende de él.
 func _finish(interrupted: bool) -> void:
+	if experimental_mode:
+		return
 	if action == "" or _needs_start.is_empty():
 		return
 	if interrupted and phase == Phase.MOVING:
@@ -940,6 +972,10 @@ func _reset_learned() -> void:
 
 
 func _save_brain() -> void:
+	if experimental_mode:
+		if free_brain != null:
+			free_brain.save()
+		return
 	if not persist_brain:
 		return
 	var data: Dictionary = {"learned": learned, "affinity": affinity, "traits": traits, "fish_memory": fish_memory, "stats": stats,
@@ -969,6 +1005,10 @@ func _load_brain() -> void:
 
 
 func reset_brain() -> void:
+	if experimental_mode and free_brain != null:
+		free_brain.reset()
+		_log("Experimento reiniciado sin conocimiento previo.")
+		return
 	_reset_learned()
 	affinity.clear()
 	fish_memory.clear()

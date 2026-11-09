@@ -148,7 +148,7 @@ func _build() -> void:
 	var rv: VBoxContainer = VBoxContainer.new()
 	rv.add_theme_constant_override("separation", 2)
 	right.add_child(rv)
-	var mind_box: VBoxContainer = _section(rv, "Personalidad (evoluciona sola)", true)
+	var mind_box: VBoxContainer = _section(rv, "Rasgos clásicos (inactivos)" if cat.experimental_mode else "Personalidad (evoluciona sola)", not cat.experimental_mode)
 	for k: String in Cat.TRAIT_NAMES:
 		var b2: ProgressBar = _bar(TRAIT_COLOR)
 		b2.max_value = 1.0
@@ -158,7 +158,7 @@ func _build() -> void:
 	var disc_box: VBoxContainer = _section(rv, "Descubrimientos (solo)", true)
 	_disc_label = _small_text(9)
 	disc_box.add_child(_disc_label)
-	var learn_box: VBoxContainer = _section(rv, "Aprendizaje", false)
+	var learn_box: VBoxContainer = _section(rv, "Experimento libre" if cat.experimental_mode else "Aprendizaje", cat.experimental_mode)
 	_learn_label = _small_text(9)
 	learn_box.add_child(_learn_label)
 	var log_box: VBoxContainer = _section(rv, "Diario", false)
@@ -185,6 +185,8 @@ func _build() -> void:
 
 ## Resume lo que el gato aprendió probando: qué cosa+verbo sube o baja qué necesidad.
 func _discoveries_text() -> String:
+	if cat.experimental_mode and cat.free_brain != null:
+		return "Aprende por objeto, verbo, zona y contexto.\n%d experiencias distintas · %d lugares recordados.\nEl detalle queda en el registro local." % [cat.free_brain.memory.size(), cat.free_brain.places.size()]
 	if cat.knowledge.is_empty():
 		return "Aún no ha probado nada. Todo es misterio."
 	var rows: Array = []
@@ -239,7 +241,7 @@ func _process(_delta: float) -> void:
 	var st: String = ""
 	for i in mini(4, scores.size()):
 		var mark: String = "▶ " if scores[i][0] == cat.action else "   "
-		st += "%s%s  %.2f\n" % [mark, Cat.ACTION_NAMES[scores[i][0]], scores[i][1]]
+		st += "%s%s  %.2f\n" % [mark, Cat.ACTION_NAMES.get(scores[i][0], scores[i][0]), scores[i][1]]
 	_scores_label.text = st.strip_edges(false, true)
 
 	var items: Array = []
@@ -259,6 +261,9 @@ func _process(_delta: float) -> void:
 	txt += "Lugar favorito: %s\n" % fav
 	txt += "Pescados %d · Siestas %d · Juegos %d\nLugares de pesca %d · Decisiones %d" % [
 		int(cat.stats.fish_eaten), int(cat.stats.naps), int(cat.stats.plays), cat.fish_memory.size(), int(cat.stats.decisions)]
+	if cat.experimental_mode and cat.free_brain != null:
+		var brain: FreeCatBrain = cat.free_brain
+		txt = "EXPERIMENTO LIBRE\nSemilla: %d\nEnsayos: %d · Recuerdos: %d\nCuriosidad: %.2f · Azar: %.2f\nSin soluciones predefinidas.\nR reinicia esta memoria." % [brain.actual_seed, brain.completed_trials, brain.memory.size(), brain.curiosity, brain.random_choice]
 	_learn_label.text = txt
 	_log_label.text = "\n".join(cat.log_lines.slice(-4))
 	_speed_label.text = "Velocidad x%d" % int(Engine.time_scale)

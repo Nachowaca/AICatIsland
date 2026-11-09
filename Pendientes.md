@@ -41,7 +41,9 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [x] Aprende el efecto real de cada (cosa + verbo) sobre sus necesidades
 - [x] Curiosidad: lo que nunca probó le atrae (más si es curioso o está aburrido)
 - [x] Generaliza por tipo: lo aprendido con un montículo vale para otros montículos
-- [ ] Pasar TODAS las acciones fijas (comer, dormir, rascar...) a este sistema (cerebro v2)
+- [~] Cerebro v2 experimental activo: verbos sin utilidades prefijadas, efectos netos aprendidos, percepción local, memoria por lugar/contexto y parámetros libres (`FreeBrain`)
+- [ ] Estudiar varias semillas y corregir sesgos del selector sin regalar soluciones
+- [ ] Aprendizaje de secuencias, generalización perceptiva y costes reales de desplazamiento
 - [ ] Experimento de los 5 gatos: comprobar que salen personalidades distintas
 - [ ] Equilibrar: hoy la novedad gana mucho y la pelota/rascador casi no se usan
 - [ ] Que también aprenda a evitar: recordar el pellizco del cangrejo con más fuerza (miedo)
@@ -89,6 +91,7 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [ ] Elegir otra semilla o tamaño de isla desde un menú (todo se recoloca solo salvo los objetos de la escena)
 - [x] Repositorio en GitHub: https://github.com/Nachowaca/AICatIsland (README + .gitignore)
 - [ ] Guardar también el estado del mundo (objetos descubiertos)
-- [ ] Panel de "experimento": comparar gatos, gráficas de necesidades en el tiempo
+- [~] Panel experimental con semilla/ensayos; registro JSON local de los últimos 200 ensayos
+- [ ] Comparador entre gatos y gráficas de necesidades en el tiempo
 - [ ] Más pruebas: que aprenda X tras N días
 - [x] Escena de vista ampliada para revisar arte: `res://tests/zoom_preview.tscn`

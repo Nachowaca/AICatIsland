@@ -15,6 +15,7 @@ func _setup() -> void:
 	main = (load("res://scenes/main.tscn") as PackedScene).instantiate() as Node2D
 	cat = main.get_node("Entities/Cat") as Cat
 	cat.persist_brain = false # cerebro nuevo, no toca la partida guardada
+	cat.experimental_mode = false # regresión del cerebro clásico, no del experimento
 	main.get_node("HUD").free()
 	tree.root.add_child(main)
 	day_night = main.get_node("DayNight") as DayNight
