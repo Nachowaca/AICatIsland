@@ -99,3 +99,5 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [x] Escena de vista ampliada para revisar arte: `res://tests/zoom_preview.tscn`
 
 - [x] Test dev de iluminación con botón Día/Noche: `res://tests/dev_day_night.tscn` (F6); transición de 4 s y memoria aislada.
+
+- [x] Pantalla de inicio en pantalla completa: isla animada de fondo, Entrar/Salir y F11; fondo sin persistencia del cerebro.
