@@ -72,6 +72,7 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [ ] Niebla al amanecer
 
 ## 6. Técnica / organización
+- [x] Repositorio en GitHub: https://github.com/Nachowaca/AICatIsland (README + .gitignore)
 - [ ] Guardar también el estado del mundo (objetos descubiertos)
 - [ ] Panel de "experimento": comparar gatos, gráficas de necesidades en el tiempo
 - [ ] Más pruebas: que aprenda X tras N días
