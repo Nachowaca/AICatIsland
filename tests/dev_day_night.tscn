@@ -1,0 +1,39 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/dev_day_night.gd" id="1"]
+
+[node name="DevDayNight" type="Node"]
+script = ExtResource("1")
+inspection_hour = 12.0
+
+[node name="DevControls" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="Panel" type="PanelContainer" parent="DevControls"]
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -130.0
+offset_top = 12.0
+offset_right = 130.0
+offset_bottom = 96.0
+
+[node name="Rows" type="VBoxContainer" parent="DevControls/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Clock" type="Label" parent="DevControls/Panel/Rows"]
+layout_mode = 2
+text = "DEV · Iluminación"
+horizontal_alignment = 1
+
+[node name="Toggle" type="Button" parent="DevControls/Panel/Rows"]
+custom_minimum_size = Vector2(240, 38)
+layout_mode = 2
+text = "Pasar a noche"
+
+[node name="Help" type="Label" parent="DevControls/Panel/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Transición 4 s · No guarda memoria"
+horizontal_alignment = 1

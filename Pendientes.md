@@ -97,3 +97,5 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [ ] Comparador entre gatos y gráficas de necesidades en el tiempo
 - [ ] Más pruebas: que aprenda X tras N días
 - [x] Escena de vista ampliada para revisar arte: `res://tests/zoom_preview.tscn`
+
+- [x] Test dev de iluminación con botón Día/Noche: `res://tests/dev_day_night.tscn` (F6); transición de 4 s y memoria aislada.

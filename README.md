@@ -52,3 +52,8 @@ Ver **[Pendientes.md](Pendientes.md)** para lo hecho y lo que viene.
 El modo experimental reemplaza el selector clásico, sin borrarlo. No incluye reglas
 como hambre→pescado o miedo→farol. Ver [EXPERIMENTO.md](EXPERIMENTO.md) para ajustar
 variables, estudiar resultados y entender sus límites.
+
+### Test visual de día/noche
+Abrir `res://tests/dev_day_night.tscn` y pulsar **F6**. El botón alterna entre
+12:00 y 21:00 en cuatro segundos, pasando por atardecer o amanecer. La hora queda
+fija al terminar; no guarda ni carga la memoria del gato ni adelanta el contador de días.
