@@ -1,0 +1,11 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Plugin del asistente Ziva (local de cada editor, no forma parte del juego)
+/addons/ziva_agent/
+/.ziva/
+
+# Sistema
+.DS_Store
+*.tmp

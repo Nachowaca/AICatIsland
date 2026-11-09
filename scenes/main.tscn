@@ -1,0 +1,157 @@
+[gd_scene format=3 uid="uid://bi3uu464qfnc"]
+
+[ext_resource type="Script" uid="uid://dw3tsw8gr4eue" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Script" uid="uid://cxhhserxd4dxl" path="res://scripts/world/day_night.gd" id="2_dn"]
+[ext_resource type="Script" uid="uid://cbm3qjkovrjyk" path="res://scripts/world/island.gd" id="3_isl"]
+[ext_resource type="Script" uid="uid://b3yyg4ktptu0v" path="res://scripts/world/interactable.gd" id="4_int"]
+[ext_resource type="Script" uid="uid://2busrms0qg0s" path="res://scripts/world/jp_tree.gd" id="5_tree"]
+[ext_resource type="Script" uid="uid://c1f3u3b3fj2vb" path="res://scripts/world/fish.gd" id="6_fish"]
+[ext_resource type="Script" uid="uid://gc8io6cusd3f" path="res://scripts/cat/cat.gd" id="7_cat"]
+[ext_resource type="Script" uid="uid://hefb17nq0vgv" path="res://scripts/ui/hud.gd" id="8_hud"]
+[ext_resource type="Script" path="res://scripts/world/water.gd" id="9_water"]
+[ext_resource type="Script" path="res://scripts/world/discoverable.gd" id="10_disc"]
+
+[node name="Main" type="Node2D" unique_id=176245956]
+script = ExtResource("1_game")
+
+[node name="DayNight" type="CanvasModulate" parent="." unique_id=716012031]
+script = ExtResource("2_dn")
+
+[node name="Water" type="Node2D" parent="."]
+script = ExtResource("9_water")
+
+[node name="Island" type="Node2D" parent="." unique_id=1492406654]
+script = ExtResource("3_isl")
+
+[node name="Entities" type="Node2D" parent="." unique_id=1084481087]
+y_sort_enabled = true
+
+[node name="Shrine" type="Node2D" parent="Entities" unique_id=1525376272]
+position = Vector2(96, 342)
+script = ExtResource("4_int")
+display_name = "Santuario"
+grid_pos = Vector2(12.5, 9.5)
+
+[node name="LanternA" type="Node2D" parent="Entities" unique_id=1698384324]
+position = Vector2(-38.399994, 348.40002)
+script = ExtResource("4_int")
+kind = 3
+display_name = "Farol de piedra"
+grid_pos = Vector2(10.6, 11.8)
+
+[node name="LanternB" type="Node2D" parent="Entities" unique_id=1800861350]
+position = Vector2(76.79999, 406)
+script = ExtResource("4_int")
+kind = 3
+display_name = "Farol de piedra"
+grid_pos = Vector2(14.2, 11.8)
+
+[node name="ScratchPost" type="Node2D" parent="Entities" unique_id=2080375615]
+position = Vector2(32, 502)
+script = ExtResource("4_int")
+kind = 1
+display_name = "Rascador"
+grid_pos = Vector2(16.5, 15.5)
+
+[node name="Temari" type="Node2D" parent="Entities" unique_id=522247766]
+position = Vector2(-86.400024, 497.2)
+script = ExtResource("4_int")
+kind = 2
+display_name = "Temari"
+grid_pos = Vector2(14.5, 17.2)
+
+[node name="Torii" type="Node2D" parent="Entities" unique_id=707146018]
+position = Vector2(-227.20001, 577.6)
+script = ExtResource("4_int")
+kind = 4
+display_name = "Torii"
+grid_pos = Vector2(14.5, 21.6)
+elevated = false
+
+[node name="SakuraA" type="Node2D" parent="Entities" unique_id=352400616]
+position = Vector2(-32, 278)
+script = ExtResource("5_tree")
+grid_pos = Vector2(8.5, 9.5)
+
+[node name="SakuraB" type="Node2D" parent="Entities" unique_id=1455760985]
+position = Vector2(224, 438)
+script = ExtResource("5_tree")
+tree_scale = 1.15
+grid_pos = Vector2(17.5, 10.5)
+
+[node name="SakuraC" type="Node2D" parent="Entities" unique_id=1596557594]
+position = Vector2(-224, 406)
+script = ExtResource("5_tree")
+tree_scale = 0.9
+grid_pos = Vector2(9.5, 16.5)
+
+[node name="PineA" type="Node2D" parent="Entities" unique_id=580677883]
+position = Vector2(265.6, 385.2)
+script = ExtResource("5_tree")
+kind = 1
+grid_pos = Vector2(16.5, 8.2)
+
+[node name="PineB" type="Node2D" parent="Entities" unique_id=584225324]
+position = Vector2(-188.8, 327.6)
+script = ExtResource("5_tree")
+kind = 1
+tree_scale = 0.9
+grid_pos = Vector2(7.6, 13.5)
+
+[node name="Momiji" type="Node2D" parent="Entities" unique_id=687187739]
+position = Vector2(137.59998, 522.8)
+script = ExtResource("5_tree")
+kind = 2
+grid_pos = Vector2(18.8, 14.5)
+
+[node name="Bamboo" type="Node2D" parent="Entities" unique_id=1624254747]
+position = Vector2(124.8, 295.6)
+script = ExtResource("5_tree")
+kind = 3
+shade_radius = 1.2
+grid_pos = Vector2(10.5, 7.2)
+
+[node name="Fish" type="Node2D" parent="Entities" unique_id=1726210071]
+position = Vector2(310.40002, 555.2)
+script = ExtResource("6_fish")
+land_spot = Vector2(21.8, 12.5)
+grid_pos = Vector2(22.2, 12.5)
+elevated = false
+
+[node name="BuriedShell" type="Node2D" parent="Entities"]
+script = ExtResource("10_disc")
+grid_pos = Vector2(15.5, 6.5)
+
+[node name="BuriedBell" type="Node2D" parent="Entities"]
+script = ExtResource("10_disc")
+kind = 1
+grid_pos = Vector2(10.4, 8.4)
+
+[node name="CrabRock" type="Node2D" parent="Entities"]
+script = ExtResource("10_disc")
+kind = 2
+buried = false
+grid_pos = Vector2(8.5, 19.5)
+
+[node name="Matatabi" type="Node2D" parent="Entities"]
+script = ExtResource("10_disc")
+kind = 3
+buried = false
+grid_pos = Vector2(18.5, 17.8)
+
+[node name="RootHollow" type="Node2D" parent="Entities"]
+script = ExtResource("10_disc")
+kind = 4
+buried = false
+grid_pos = Vector2(7.9, 14.3)
+
+[node name="Cat" type="Node2D" parent="Entities" unique_id=1018439464]
+position = Vector2(-16, 414)
+script = ExtResource("7_cat")
+grid_pos = Vector2(13, 13.5)
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1743686644]
+position = Vector2(0, 400)
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=2138330328]
+script = ExtResource("8_hud")

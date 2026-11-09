@@ -1,0 +1,39 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/jp_tree.gd" id="1"]
+
+[node name="TreePreview" type="Node2D"]
+
+[node name="BG" type="ColorRect" parent="."]
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 400.0
+offset_bottom = 300.0
+color = Color(0.55, 0.72, 0.4, 1)
+
+[node name="Sakura" type="Node2D" parent="."]
+script = ExtResource("1")
+grid_pos = Vector2(-2.25, 2.25)
+elevated = false
+
+[node name="Momiji" type="Node2D" parent="."]
+script = ExtResource("1")
+kind = 2
+grid_pos = Vector2(-0.75, 0.75)
+elevated = false
+
+[node name="Pine" type="Node2D" parent="."]
+script = ExtResource("1")
+kind = 1
+grid_pos = Vector2(0.75, -0.75)
+elevated = false
+
+[node name="Bamboo" type="Node2D" parent="."]
+script = ExtResource("1")
+kind = 3
+grid_pos = Vector2(2.25, -2.25)
+elevated = false
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -38)
+zoom = Vector2(2.8, 2.8)
