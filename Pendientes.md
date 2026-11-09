@@ -12,6 +12,8 @@ Leyenda: `[x]` hecho · `[~]` en curso / versión 1 · `[ ]` pendiente
 - [x] Árboles japoneses: sakura, momiji, pino niwaki, bambú (copas tipo nube)
 - [x] Mar con shader: profundidad, olas hacia la costa, espuma, cáusticas, reflejos, destellos
 - [x] Playa más baja que la hierba + arena mojada
+- [x] Pasto irregular estilo grabado: manchas de color suaves, borde festoneado sobre la arena,
+      matas, susuki, flores (nadeshiko, kikyō…) y trébol meciéndose con viento y ráfagas (`meadow.gd` + `grass_sway.gdshader`)
 - [x] Ciclo día/noche (4 min) con faroles y luces nocturnas
 - [x] Objetos: santuario, 2 faroles tōrō, rascador, temari, torii en el agua
 - [x] Pescado en la orilla (aparece solo, más al amanecer; clic para dejar uno)
@@ -67,7 +69,8 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 ## 5. Mundo y ambiente
 - [ ] Lluvia / tormentas que asustan (buscar techo)
 - [ ] Estaciones (sakura en primavera, momiji en otoño, nieve en invierno)
-- [ ] Viento visible en hierba y bambú
+- [x] Viento visible en la hierba (ráfagas que barren la isla)
+- [ ] Viento también en bambú, árboles y noren
 - [ ] Sonido ambiente (olas, cigarras de día, grillos de noche)
 - [ ] Niebla al amanecer
 
@@ -76,3 +79,4 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [ ] Guardar también el estado del mundo (objetos descubiertos)
 - [ ] Panel de "experimento": comparar gatos, gráficas de necesidades en el tiempo
 - [ ] Más pruebas: que aprenda X tras N días
+- [x] Escena de vista ampliada para revisar arte: `res://tests/zoom_preview.tscn`

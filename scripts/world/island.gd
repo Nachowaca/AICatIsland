@@ -38,6 +38,9 @@ var land_cells: Array[Vector2i] = []
 ## Cada elemento: [Vector2 centro_agua, Vector2 centro_tierra]
 var shore_pairs: Array = []
 var _astar: AStarGrid2D
+## Altura "orgánica" de cada celda (antes de convertirla en tipo de suelo).
+var elev: Dictionary = {}
+var _tint: FastNoiseLite
 
 ## Isla activa, para que las entidades sepan a qué altura está el suelo.
 static var instance: Island
@@ -66,6 +69,11 @@ func generate() -> void:
 	tiles.clear()
 	land_cells.clear()
 	shore_pairs.clear()
+	elev.clear()
+	_tint = FastNoiseLite.new()
+	_tint.seed = seed_value * 3 + 11
+	_tint.frequency = 0.16
+	_tint.fractal_octaves = 3
 	var noise: FastNoiseLite = FastNoiseLite.new()
 	noise.seed = seed_value
 	noise.frequency = 0.09
@@ -85,6 +93,7 @@ func generate() -> void:
 			elif h > -0.2:
 				t = T.SHALLOW
 			tiles[Vector2i(x, y)] = t
+			elev[Vector2i(x, y)] = h
 			if t >= T.SAND:
 				land_cells.append(Vector2i(x, y))
 	_astar = AStarGrid2D.new()
@@ -169,10 +178,110 @@ func _hash(x: int, y: int) -> float:
 
 
 ## El agua la dibuja el nodo Water (shader); aquí solo la tierra.
+## Las matas de pasto y flores las dibuja el nodo Meadow.
 func _draw() -> void:
 	for s in range(0, 2 * map_size - 1):
 		for x in range(maxi(0, s - map_size + 1), mini(s, map_size - 1) + 1):
 			_draw_tile(x, s - x)
+	# segunda pasada: bordes festoneados del pasto (por encima de vecinos)
+	for s2 in range(0, 2 * map_size - 1):
+		for x2 in range(maxi(0, s2 - map_size + 1), mini(s2, map_size - 1) + 1):
+			_draw_grass_lip(Vector2i(x2, s2 - x2))
+
+
+# ---------------------------------------------------------------- color del pasto
+
+const GRASS_LIGHT = Color(0.68, 0.78, 0.46)
+const GRASS_MID = Color(0.53, 0.69, 0.38)
+const GRASS_DEEP = Color(0.41, 0.59, 0.33)
+const MOSS_A = Color(0.33, 0.51, 0.31)
+const MOSS_B = Color(0.26, 0.43, 0.28)
+
+
+## Altura orgánica interpolada entre centros de celda (para mezclas suaves).
+func elev_at(g: Vector2) -> float:
+	var p: Vector2 = g - Vector2(0.5, 0.5)
+	var x0: int = floori(p.x)
+	var y0: int = floori(p.y)
+	var fx: float = p.x - float(x0)
+	var fy: float = p.y - float(y0)
+	var a: float = float(elev.get(Vector2i(x0, y0), -1.0))
+	var b: float = float(elev.get(Vector2i(x0 + 1, y0), -1.0))
+	var c: float = float(elev.get(Vector2i(x0, y0 + 1), -1.0))
+	var d: float = float(elev.get(Vector2i(x0 + 1, y0 + 1), -1.0))
+	return lerpf(lerpf(a, b, fx), lerpf(c, d, fx), fy)
+
+
+## Color del pasto en cualquier punto: manchas suaves tipo aguada de tinta
+## y paso gradual hacia el musgo del centro de la isla.
+func grass_color(g: Vector2) -> Color:
+	if _tint == null:
+		return GRASS_MID
+	var n: float = _tint.get_noise_2d(g.x * 6.0, g.y * 6.0) * 0.5 + 0.5
+	var fine: float = _tint.get_noise_2d(g.x * 22.0 + 100.0, g.y * 22.0) * 0.5 + 0.5
+	var col: Color
+	if n < 0.5:
+		col = GRASS_DEEP.lerp(GRASS_MID, smoothstep(0.15, 0.5, n))
+	else:
+		col = GRASS_MID.lerp(GRASS_LIGHT, smoothstep(0.5, 0.85, n))
+	var moss: float = smoothstep(0.42, 0.72, elev_at(g))
+	col = col.lerp(MOSS_A.lerp(MOSS_B, 1.0 - n), moss * 0.85)
+	return col.lightened((fine - 0.5) * 0.08)
+
+
+## Ceja de pasto festoneada (como nubes de grabado) que cuelga sobre el
+## escalón hacia la arena o el agua. Rompe la escalera de baldosas.
+func _draw_grass_lip(cell: Vector2i) -> void:
+	var t: int = tiles.get(cell, T.DEEP)
+	if t < T.GRASS:
+		return
+	var h: float = LAND_H
+	var fx: float = float(cell.x)
+	var fy: float = float(cell.y)
+	for dir: Vector2i in DIRS:
+		if cell_height(cell + dir) >= h:
+			continue
+		var a: Vector2
+		var b: Vector2
+		match dir:
+			Vector2i(1, 0):
+				a = Vector2(fx + 1, fy)
+				b = Vector2(fx + 1, fy + 1)
+			Vector2i(-1, 0):
+				a = Vector2(fx, fy)
+				b = Vector2(fx, fy + 1)
+			Vector2i(0, 1):
+				a = Vector2(fx, fy + 1)
+				b = Vector2(fx + 1, fy + 1)
+			_:
+				a = Vector2(fx, fy)
+				b = Vector2(fx + 1, fy)
+		var n: Vector2 = Vector2(dir)
+		var front: bool = dir.x > 0 or dir.y > 0
+		var bumps: int = 3 + int(_hash(cell.x * 7 + dir.x, cell.y * 5 + dir.y) * 2.0)
+		for i in bumps:
+			var t0: float = float(i) / float(bumps)
+			var t1: float = float(i + 1) / float(bumps)
+			var depth: float = 0.06 + 0.11 * _hash(cell.x * 13 + i, cell.y * 17 + dir.x * 3 + dir.y)
+			var arc: PackedVector2Array = PackedVector2Array()
+			for k in 9:
+				var ang: float = PI * float(k) / 8.0
+				var along: float = lerpf(t0, t1, (1.0 - cos(ang)) * 0.5)
+				var gpt: Vector2 = a.lerp(b, along) + n * depth * sin(ang)
+				arc.append(_p(gpt.x, gpt.y, h))
+			var mid: Vector2 = a.lerp(b, (t0 + t1) * 0.5)
+			var col: Color = grass_color(mid - n * 0.2)
+			if front:
+				var shadow: PackedVector2Array = PackedVector2Array()
+				for p: Vector2 in arc:
+					shadow.append(p + Vector2(0, 3))
+				draw_colored_polygon(shadow, Color(0.12, 0.1, 0.05, 0.22))
+			draw_colored_polygon(arc, col)
+			draw_polyline(arc, Color(INK, 0.7), 1.1)
+			# brizna que asoma del borde
+			if _hash(cell.x + i * 3, cell.y + dir.y * 7) > 0.6:
+				var tip: Vector2 = arc[4]
+				draw_line(tip, tip + Vector2(n.x - n.y, -3.5), col.darkened(0.3), 1.0)
 
 
 func cell_height(c: Vector2i) -> float:
@@ -226,7 +335,21 @@ func _draw_tile(x: int, y: int) -> void:
 		draw_colored_polygon(PackedVector2Array([_p(fx + 1, fy + 1, h), _p(fx + 1, fy, h), _p(fx + 1, fy, h_x), _p(fx + 1, fy + 1, h_x)]), side_r)
 		if h_x == 0.0:
 			draw_colored_polygon(PackedVector2Array([_p(fx + 1, fy + 1, 2.0), _p(fx + 1, fy, 2.0), _p(fx + 1, fy), _p(fx + 1, fy + 1)]), side_r.darkened(0.3))
-	draw_colored_polygon(PackedVector2Array([_p(fx, fy, h), _p(fx + 1, fy, h), _p(fx + 1, fy + 1, h), _p(fx, fy + 1, h)]), top)
+	if t == T.SAND:
+		draw_colored_polygon(PackedVector2Array([_p(fx, fy, h), _p(fx + 1, fy, h), _p(fx + 1, fy + 1, h), _p(fx, fy + 1, h)]), top)
+	else:
+		# pasto: 2x2 sub-quads con color por vértice → degradados suaves sin damero
+		for sx in 2:
+			for sy in 2:
+				var x0: float = fx + float(sx) * 0.5
+				var y0: float = fy + float(sy) * 0.5
+				var corners: Array[Vector2] = [Vector2(x0, y0), Vector2(x0 + 0.5, y0), Vector2(x0 + 0.5, y0 + 0.5), Vector2(x0, y0 + 0.5)]
+				var pts: PackedVector2Array = PackedVector2Array()
+				var cols: PackedColorArray = PackedColorArray()
+				for cg: Vector2 in corners:
+					pts.append(_p(cg.x, cg.y, h))
+					cols.append(grass_color(cg))
+				draw_polygon(pts, cols)
 
 	# Arena mojada: franjas más oscuras en los bordes que tocan el agua
 	if t == T.SAND:
@@ -251,29 +374,22 @@ func _draw_tile(x: int, y: int) -> void:
 
 	# Bordes de tinta donde el terreno baja
 	if h_y < h:
-		draw_line(_p(fx, fy + 1, h), _p(fx + 1, fy + 1, h), ink, 1.2)
+		if t == T.SAND:
+			draw_line(_p(fx, fy + 1, h), _p(fx + 1, fy + 1, h), ink, 1.2)
 		draw_line(_p(fx, fy + 1, h_y), _p(fx + 1, fy + 1, h_y), ink, 1.0)
 	if h_x < h:
-		draw_line(_p(fx + 1, fy, h), _p(fx + 1, fy + 1, h), ink, 1.2)
+		if t == T.SAND:
+			draw_line(_p(fx + 1, fy, h), _p(fx + 1, fy + 1, h), ink, 1.2)
 		draw_line(_p(fx + 1, fy, h_x), _p(fx + 1, fy + 1, h_x), ink, 1.0)
-	if cell_height(cell + Vector2i(-1, 0)) < h:
-		draw_line(_p(fx, fy, h), _p(fx, fy + 1, h), ink, 1.2)
-	if cell_height(cell + Vector2i(0, -1)) < h:
-		draw_line(_p(fx, fy, h), _p(fx + 1, fy, h), ink, 1.2)
+	if t == T.SAND:
+		if cell_height(cell + Vector2i(-1, 0)) < h:
+			draw_line(_p(fx, fy, h), _p(fx, fy + 1, h), ink, 1.2)
+		if cell_height(cell + Vector2i(0, -1)) < h:
+			draw_line(_p(fx, fy, h), _p(fx + 1, fy, h), ink, 1.2)
 
 	# Detalles
 	var c: Vector2 = _p(fx + 0.5, fy + 0.5, h)
 	if t == T.GRASS or t == T.MOSS:
-		if j > 0.45:
-			var tuft: Color = top.darkened(0.25)
-			var o: Vector2 = Vector2((j - 0.7) * 30.0, (_hash(y, x) - 0.5) * 10.0)
-			draw_line(c + o, c + o + Vector2(-2, -4), tuft, 1.2)
-			draw_line(c + o, c + o + Vector2(0, -5), tuft, 1.2)
-			draw_line(c + o, c + o + Vector2(2, -4), tuft, 1.2)
-		if j > 0.9:
-			var o2: Vector2 = Vector2((_hash(y, x) - 0.5) * 24.0, (j - 0.95) * 60.0)
-			draw_circle(c + o2, 1.6, Color(1.0, 0.8, 0.86))
-			draw_circle(c + o2 + Vector2(5, 2), 1.4, Color(1.0, 0.97, 0.9))
 		if t == T.MOSS and j < 0.08:
 			draw_colored_polygon(PackedVector2Array([c + Vector2(-6, 0), c + Vector2(-3, -4), c + Vector2(4, -4), c + Vector2(7, 0), c + Vector2(2, 2)]), Color(0.55, 0.55, 0.52))
 	elif t == T.SAND and j > 0.82:
