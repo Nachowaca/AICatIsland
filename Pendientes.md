@@ -101,3 +101,8 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [x] Test dev de iluminación con botón Día/Noche: `res://tests/dev_day_night.tscn` (F6); transición de 4 s y memoria aislada.
 
 - [x] Pantalla de inicio en pantalla completa: isla animada de fondo, Entrar/Salir y F11; fondo sin persistencia del cerebro.
+
+## Plan de audio
+- [x] Dirección de SFX, música chill, mar y noche cozy: [PLAN_AUDIO.md](PLAN_AUDIO.md).
+- [~] Audio fase A inicial: mar, brisa y grillos, buses/volúmenes y test dev integrados; pendiente escucha del usuario.
+- [ ] Continuar con gato/objetos y después música y mezcla.

@@ -15,6 +15,17 @@ var _to_hour: float = 21.0
 func _ready() -> void:
 	super._ready()
 	cycle = get_node("Main/DayNight") as DayNight
+	var audio: IslandAmbience = get_node("Main/IslandAmbience") as IslandAmbience
+	(get_node("Main/IslandAmbience/Interface") as CanvasLayer).visible = false
+	var audio_toggle: CheckButton = CheckButton.new()
+	audio_toggle.text = "Opciones de audio"
+	$DevControls/Panel/Rows.add_child(audio_toggle)
+	var audio_panel: AudioControls = AudioControls.new()
+	audio_panel.controller = audio
+	audio_panel.developer_controls = true
+	audio_panel.visible = false
+	$DevControls/Panel/Rows.add_child(audio_panel)
+	audio_toggle.toggled.connect(audio_panel.set_visible)
 	(get_node("Main/HUD") as CanvasLayer).visible = false
 	_fit_island()
 	get_viewport().size_changed.connect(_fit_island)
