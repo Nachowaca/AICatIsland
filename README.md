@@ -54,6 +54,7 @@ como hambre→pescado o miedo→farol. Ver [EXPERIMENTO.md](EXPERIMENTO.md) para
 variables, estudiar resultados y entender sus límites.
 
 ### Test visual de día/noche
-Abrir `res://tests/dev_day_night.tscn` y pulsar **F6**. El botón alterna entre
+Abrir `res://tests/dev_day_night.tscn` y pulsar **F6**. Muestra toda la isla, sin paneles
+del gato, con encuadre automático al tamaño de ventana. El botón alterna entre
 12:00 y 21:00 en cuatro segundos, pasando por atardecer o amanecer. La hora queda
 fija al terminar; no guarda ni carga la memoria del gato ni adelanta el contador de días.

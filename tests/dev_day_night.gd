@@ -15,9 +15,33 @@ var _to_hour: float = 21.0
 func _ready() -> void:
 	super._ready()
 	cycle = get_node("Main/DayNight") as DayNight
+	(get_node("Main/HUD") as CanvasLayer).visible = false
+	_fit_island()
+	get_viewport().size_changed.connect(_fit_island)
 	_night = cycle.is_night()
 	toggle.pressed.connect(_toggle_time)
 	_update_labels()
+
+func _fit_island() -> void:
+	var island: Island = get_node("Main/Island") as Island
+	var camera: Camera2D = get_node("Main/Camera2D") as Camera2D
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	# Encuadra la tierra real, no la rejilla cuadrada que contiene mucho mar vacío.
+	var low: Vector2 = Iso.to_screen(Vector2.ONE * float(island.map_size) * 0.5)
+	var high: Vector2 = low
+	for cell: Vector2i in island.land_cells:
+		var point: Vector2 = Iso.to_screen(Vector2(cell))
+		low.x = minf(low.x, point.x)
+		low.y = minf(low.y, point.y)
+		high.x = maxf(high.x, point.x)
+		high.y = maxf(high.y, point.y)
+	low -= Vector2(100, 140) # costa, copas y tejados
+	high += Vector2(100, 90)
+	var world_size: Vector2 = high - low
+	var available: Vector2 = Vector2(maxf(viewport_size.x - 100.0, 100.0), maxf(viewport_size.y - 170.0, 100.0))
+	var fit_zoom: float = minf(available.x / world_size.x, available.y / world_size.y)
+	camera.zoom = Vector2.ONE * fit_zoom
+	camera.position = (low + high) * 0.5 - Vector2(0, 45.0 / fit_zoom)
 
 func _toggle_time() -> void:
 	if _moving:
