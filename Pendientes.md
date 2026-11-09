@@ -1,6 +1,6 @@
 # GatitoAI — Pendientes
 
-Concepto: isla isométrica del Japón antiguo con entorno procedural y gato con sprites IA.
+Concepto: isla isométrica del Japón antiguo con entorno principalmente procedural; gato y chōchin con sprites IA.
 Un gatito vive solo: pocas pautas simples, y él descubre, aprende y evoluciona.
 
 Leyenda: `[x]` hecho · `[~]` en curso / versión 1 · `[ ]` pendiente
@@ -19,8 +19,10 @@ Leyenda: `[x]` hecho · `[~]` en curso / versión 1 · `[ ]` pendiente
 - [x] El gato baja y sube el talud de pasto suavemente; pesca desde la orilla real
 - [x] Pasto irregular estilo grabado: manchas de color suaves, borde festoneado sobre la arena,
       matas, susuki, flores (nadeshiko, kikyō…) y trébol meciéndose con viento y ráfagas (`meadow.gd` + `grass_sway.gdshader`)
-- [x] Ciclo día/noche (4 min) con faroles y luces nocturnas
-- [x] Objetos: santuario, 2 faroles tōrō, rascador, temari, torii en el agua
+- [x] Ciclo día/noche (4 min): atardecer cálido, ambiente lunar frío y encendido/apagado suave de velas
+- [x] Dos chōchin (rojo y crema con crisantemo) basados en referencia, soportes de madera y luz ámbar con parpadeo
+- [ ] Sol y luna visibles, recorrido celeste y sombras que acompañen su dirección
+- [x] Objetos: santuario, 2 chōchin de vela, rascador, temari, torii en el agua
 - [x] Pescado en la orilla (aparece solo, más al amanecer; clic para dejar uno)
 - [x] IA de utilidad + aprendizaje simple + memoria de pesca + personalidad que deriva
 - [x] Cerebro persistente entre sesiones (`user://gatito_brain.json`)

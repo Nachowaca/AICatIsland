@@ -3,15 +3,16 @@
 Concepto en **Godot 4.7** (2D isométrico): una isla ficticia del Japón antiguo donde un gatito
 vive **solo**, guiado por pocas pautas simples, y va descubriendo, aprendiendo y evolucionando.
 
-La isla conserva el arte **procedural**, inspirado en el grabado *ukiyo-e*, con contornos
+La isla conserva el arte **principalmente procedural**, inspirado en el grabado *ukiyo-e*, con contornos
 de tinta y colores cálidos. El gato naranja atigrado usa sprites generados con IA,
 con siete animaciones: caminar, reposar, dormir, comer, jugar, escarbar y acicalarse.
-El mar es un shader procedural.
+Los dos chōchin de papel también usan sprites basados en referencia. El mar es un shader procedural.
 
 ## Qué hay
 - Isla procedural con playa, hierba y musgo; mar con olas, espuma, reflejos y destellos
-- Árboles japoneses (sakura, momiji, pino niwaki, bambú), santuario con interior, faroles tōrō, torii
-- Ciclo de día y noche con luces
+- Árboles japoneses (sakura, momiji, pino niwaki, bambú), santuario con interior, chōchin de vela, torii
+- Ciclo de día y noche con atardecer cálido, ambiente lunar frío y velas de encendido gradual
+  (el sol y la luna todavía no aparecen como cuerpos visibles)
 - **IA del gato sin servicios externos**: necesidades + puntuación de acciones + aprendizaje por experiencia
 - **Descubrimiento**: el mundo define qué hace cada cosa (montículos, roca con cangrejo, matatabi,
   guarida…) y el gato lo aprende probando verbos básicos (olfatear, escarbar, zarpazos, morder, tumbarse)

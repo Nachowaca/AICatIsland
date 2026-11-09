@@ -228,7 +228,8 @@ func _process(_delta: float) -> void:
 	if cat == null:
 		return
 	if day_night:
-		_time_label.text = "Día %d  ·  %s  ·  %s" % [day_night.day, day_night.time_string(), day_night.phase_name()]
+		var sky: String = "Luna · velas encendidas" if day_night.is_night() else "Sol"
+		_time_label.text = "Día %d · %s · %s\n%s" % [day_night.day, day_night.time_string(), day_night.phase_name(), sky]
 	for k: String in _need_bars:
 		(_need_bars[k] as ProgressBar).value = float(cat.needs[k])
 	for k: String in _trait_bars:

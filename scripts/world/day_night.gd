@@ -10,6 +10,7 @@ signal new_day(day: int)
 var hour: float = 7.0
 var day: int = 1
 var _gradient: Gradient
+var _flame_time: float = 0.0
 
 
 func _ready() -> void:
@@ -18,8 +19,8 @@ func _ready() -> void:
 	_gradient = Gradient.new()
 	_gradient.offsets = PackedFloat32Array([0.0, 0.2, 0.25, 0.33, 0.7, 0.77, 0.85, 1.0])
 	_gradient.colors = PackedColorArray([
-		Color(0.24, 0.27, 0.5), Color(0.26, 0.28, 0.5), Color(0.95, 0.68, 0.66), Color(1, 1, 1),
-		Color(1, 0.98, 0.94), Color(1.0, 0.62, 0.48), Color(0.3, 0.3, 0.52), Color(0.24, 0.27, 0.5),
+		Color(0.20, 0.26, 0.42), Color(0.25, 0.30, 0.46), Color(0.95, 0.70, 0.61), Color(1, 1, 1),
+		Color(1, 0.97, 0.90), Color(1.0, 0.60, 0.40), Color(0.25, 0.29, 0.46), Color(0.20, 0.26, 0.42),
 	])
 	color = _gradient.sample(hour / 24.0)
 
@@ -32,8 +33,12 @@ func _process(delta: float) -> void:
 		new_day.emit(day)
 	color = _gradient.sample(hour / 24.0)
 	var nf: float = night_factor()
+	_flame_time += delta
 	for l: Node in get_tree().get_nodes_in_group("night_lights"):
-		(l as PointLight2D).energy = nf * 0.7
+		var lamp: PointLight2D = l as PointLight2D
+		var phase: float = lamp.global_position.x * 0.13 + lamp.global_position.y * 0.07
+		var flicker: float = 1.0 + sin(_flame_time * 7.3 + phase) * 0.035 + sin(_flame_time * 12.7 + phase * 2.0) * 0.025
+		lamp.energy = nf * 0.85 * flicker
 
 
 ## 0 = pleno día, 1 = noche cerrada.
@@ -41,9 +46,9 @@ func night_factor() -> float:
 	if hour >= 7.0 and hour <= 18.0:
 		return 0.0
 	if hour > 18.0 and hour < 20.0:
-		return (hour - 18.0) / 2.0
+		return smoothstep(18.0, 20.0, hour)
 	if hour > 5.0 and hour < 7.0:
-		return 1.0 - (hour - 5.0) / 2.0
+		return 1.0 - smoothstep(5.0, 7.0, hour)
 	return 1.0
 
 

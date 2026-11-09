@@ -3,10 +3,12 @@ class_name Interactable
 extends IsoEntity
 ## Objetos con los que el gato puede interactuar.
 ## SHELTER: santuario-casita (dormir, protegerse)  SCRATCH_POST: rascador
-## TEMARI: pelota tradicional  LANTERN: farol de piedra tōrō  TORII: decorativo
+## TEMARI: pelota tradicional  LANTERN: chōchin de papel con vela  TORII: decorativo
 
 enum Kind { SHELTER, SCRATCH_POST, TEMARI, LANTERN, TORII }
 
+const CHOCHIN_RED = preload("res://assets/generated/chochin_red.png")
+const CHOCHIN_CREAM = preload("res://assets/generated/chochin_cream.png")
 const RED = Color(0.78, 0.16, 0.1)
 const RED_DARK = Color(0.58, 0.1, 0.07)
 const STONE = Color(0.66, 0.65, 0.6)
@@ -27,6 +29,10 @@ const FRONT_SORT_Y = 24.0  # punto de orden Y de la parte delantera
 		_setup_front()
 		queue_redraw()
 @export var display_name: String = ""
+@export var lantern_cream: bool = false:
+	set(v):
+		lantern_cream = v
+		queue_redraw()
 
 var _light: PointLight2D
 var _wiggle: float = 0.0
@@ -136,10 +142,10 @@ func _setup_light() -> void:
 		grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
 		tex.gradient = grad
 		_light.texture = tex
-		_light.color = Color(1.0, 0.72, 0.4)
+		_light.color = Color(1.0, 0.62, 0.27)
 		_light.energy = 0.0
-		_light.texture_scale = 1.4 if kind == Kind.LANTERN else 1.8
-		_light.position = Vector2(0, -22) if kind == Kind.LANTERN else gp(-0.78, -0.78, 14)
+		_light.texture_scale = 0.75 if kind == Kind.LANTERN else 0.85
+		_light.position = Vector2(0, -27) if kind == Kind.LANTERN else gp(-0.78, -0.78, 14)
 		_light.add_to_group("night_lights")
 		add_child(_light)
 	elif not wants and _light != null:
@@ -336,26 +342,22 @@ func _draw_temari() -> void:
 
 
 func _draw_lantern() -> void:
-	draw_shadow(14.0, Vector2(3, 2), 0.25)
-	draw_iso_box(0, 0, 0.3, 0.3, 0, 4, STONE, STONE_L, STONE_R)
-	draw_iso_box(0, 0, 0.1, 0.1, 4, 18, STONE, STONE_L, STONE_R)
-	draw_iso_box(0, 0, 0.24, 0.24, 18, 20, STONE, STONE_L, STONE_R)
-	draw_iso_box(0, 0, 0.19, 0.19, 20, 29, STONE, STONE_L, STONE_R)
-	var nf: float = _night()
-	var glow: Color = Color(0.3, 0.27, 0.24).lerp(Color(1.0, 0.85, 0.45), nf)
-	var flick: float = 1.0 + sin(_t * 9.0) * 0.04 * nf
-	draw_colored_polygon(PackedVector2Array([gp(-0.1, 0.19, 22), gp(0.1, 0.19, 22), gp(0.1, 0.19, 27 * flick), gp(-0.1, 0.19, 27 * flick)]), glow)
-	draw_colored_polygon(PackedVector2Array([gp(0.19, 0.1, 22), gp(0.19, -0.1, 22), gp(0.19, -0.1, 27 * flick), gp(0.19, 0.1, 27 * flick)]), glow.darkened(0.15))
-	# techo piramidal
-	var r: float = 0.36
-	var apex: Vector2 = gp(0, 0, 38)
-	draw_colored_polygon(PackedVector2Array([gp(-r, -r, 29), gp(r, -r, 29), apex]), STONE_R)
-	draw_colored_polygon(PackedVector2Array([gp(-r, r, 29), gp(r, r, 29), apex]), STONE_L)
-	draw_colored_polygon(PackedVector2Array([gp(r, r, 29), gp(r, -r, 29), apex]), STONE_R)
-	draw_polyline(PackedVector2Array([gp(-r, r, 29), gp(r, r, 29), gp(r, -r, 29), apex, gp(-r, r, 29)]), INK, 1.1)
-	draw_line(gp(r, r, 29), apex, INK, 1.0)
-	draw_circle(apex + Vector2(0, -2), 2.4, STONE)
-	draw_arc(apex + Vector2(0, -2), 2.4, 0, TAU, 10, INK, 1.0)
+	# Chōchin pequeño suspendido de un soporte de madera, no una luminaria eléctrica.
+	draw_shadow(10.0, Vector2(-3, 2), 0.22)
+	var wood: Color = Color(0.35, 0.23, 0.15)
+	draw_iso_box(-0.35, 0, 0.16, 0.16, 0, 3, wood.lightened(0.12), wood, wood.darkened(0.2))
+	var base: Vector2 = gp(-0.35, 0, 3)
+	var top: Vector2 = base + Vector2(0, -49)
+	draw_line(base, top, INK, 4.0)
+	draw_line(base, top, wood, 2.5)
+	draw_polyline(PackedVector2Array([top + Vector2(0, 9), top, Vector2(0, top.y)]), INK, 3.0)
+	draw_polyline(PackedVector2Array([top + Vector2(0, 9), top, Vector2(0, top.y)]), wood, 1.5)
+	var sway: float = sin(_t * 1.2 + grid_pos.x) * 0.035
+	var texture: Texture2D = CHOCHIN_CREAM if lantern_cream else CHOCHIN_RED
+	draw_set_transform(Vector2(0, top.y), sway)
+	draw_texture_rect(texture, Rect2(-21, 0, 42, 42), false)
+	draw_set_transform(Vector2.ZERO)
+
 
 
 func _draw_torii() -> void:
