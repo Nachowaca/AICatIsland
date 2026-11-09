@@ -6,6 +6,8 @@ const Effects = preload("res://scripts/world/free_cat_effects.gd")
 const VERBS = ["sniff", "dig", "paw", "bite", "lie", "groom"]
 const MEMORY_PATH = "user://gatito_free_brain_v1.json"
 
+## Minutos de juego para gastar 100 de energía despierto, sin esfuerzos adicionales.
+@export_range(1.0, 60.0) var fatigue_minutes: float = 10.0
 @export var experiment_seed: int = 0
 @export_range(0.0, 3.0) var curiosity: float = 0.7
 @export_range(0.0, 1.0) var random_choice: float = 0.15
@@ -50,6 +52,9 @@ func setup(host: Node2D) -> void:
 			completed_trials = int(parsed.get("completed_trials", 0))
 	cat._log("Experimento libre: sin soluciones conocidas. Semilla %d." % actual_seed)
 	choose()
+
+func energy_decay_per_second() -> float:
+	return 100.0 / (maxf(fatigue_minutes, 1.0) * 60.0)
 
 func context() -> String:
 	var night: bool = cat._day_night != null and cat._day_night.is_night()
@@ -184,7 +189,7 @@ func finish_trial() -> void:
 
 func report() -> Dictionary:
 	return {"version": 1, "seed": actual_seed, "completed_trials": completed_trials,
-		"parameters": {"curiosity": curiosity, "random_choice": random_choice, "learning_rate": learning_rate, "perception_radius": perception_radius, "travel_cost": travel_cost, "trial_seconds": trial_seconds, "need_weights": need_weights},
+		"parameters": {"fatigue_minutes": fatigue_minutes, "curiosity": curiosity, "random_choice": random_choice, "learning_rate": learning_rate, "perception_radius": perception_radius, "travel_cost": travel_cost, "trial_seconds": trial_seconds, "need_weights": need_weights},
 		"minimums": minimums, "memory": memory, "places": places, "recent_trials": history}
 
 func save() -> void:

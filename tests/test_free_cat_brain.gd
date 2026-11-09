@@ -10,6 +10,15 @@ class BodyStub:
 	func _log(_message: String) -> void:
 		pass
 
+func test_desgaste_base_equivale_a_diez_minutos() -> void:
+	var brain: FreeCatBrain = FreeCatBrain.new()
+	assert(is_equal_approx(brain.energy_decay_per_second() * 600.0, 100.0))
+	brain.fatigue_minutes = 20.0
+	assert(is_equal_approx(brain.energy_decay_per_second() * 600.0, 50.0))
+	brain.fatigue_minutes = 0.0
+	assert(brain.energy_decay_per_second() > 0.0)
+	brain.free()
+
 func test_no_nace_sabiendo_que_morder_alimenta() -> void:
 	var body: BodyStub = BodyStub.new()
 	var brain: FreeCatBrain = FreeCatBrain.new()

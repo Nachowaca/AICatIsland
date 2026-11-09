@@ -7,7 +7,8 @@
 	
 	## Variables libres
 	Seleccionar `Entities/Cat/FreeBrain` en main.tscn y modificar en el Inspector:
-	- `experiment_seed`: 0 elige una semilla; un entero fijo controla el RNG del selector.
+	- `fatigue_minutes`: minutos de juego para gastar 100 de energía despierto (10). Desgaste gradual; caminar no añade el recargo clásico. Jugar y otros efectos del mundo sí pueden gastar energía adicional. A x10, diez minutos de juego duran uno real.
+- `experiment_seed`: 0 elige una semilla; un entero fijo controla el RNG del selector.
 	- `curiosity`: bonificación por ensayos poco conocidos (0.7 inicial).
 	- `random_choice`: probabilidad de elegir otra opción, incluso conocida (0.15).
 	- `learning_rate`: cuánto reemplaza la experiencia reciente a la anterior (0.35).

@@ -176,7 +176,10 @@ func _update_needs(delta: float) -> void:
 	var walking: bool = phase == Phase.MOVING
 	needs.hunger -= 0.7 * delta * (0.5 if sleeping else 1.0)
 	if not sleeping:
-		needs.energy -= (0.45 + (0.25 if walking else 0.0)) * delta
+		var energy_decay: float = (0.45 + (0.25 if walking else 0.0))
+		if experimental_mode and free_brain != null:
+			energy_decay = free_brain.energy_decay_per_second()
+		needs.energy -= energy_decay * delta
 	needs.fun -= (0.15 if sleeping else 0.75 + float(traits.playfulness) * 0.5) * delta
 	var night: bool = _day_night != null and _day_night.is_night()
 	if night:
