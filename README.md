@@ -3,8 +3,10 @@
 Concepto en **Godot 4.7** (2D isométrico): una isla ficticia del Japón antiguo donde un gatito
 vive **solo**, guiado por pocas pautas simples, y va descubriendo, aprendiendo y evolucionando.
 
-Todo el arte está **dibujado con código** (sin imágenes): estilo de grabado *ukiyo-e*,
-contornos de tinta y colores planos. El mar es un shader procedural.
+La isla conserva el arte **procedural**, inspirado en el grabado *ukiyo-e*, con contornos
+de tinta y colores cálidos. El gato naranja atigrado usa sprites generados con IA,
+con siete animaciones: caminar, reposar, dormir, comer, jugar, escarbar y acicalarse.
+El mar es un shader procedural.
 
 ## Qué hay
 - Isla procedural con playa, hierba y musgo; mar con olas, espuma, reflejos y destellos
@@ -33,7 +35,9 @@ Abrir el proyecto en Godot 4.7 y pulsar **F5** (escena `res://scenes/main.tscn`)
 ## Estructura
 ```
 scenes/main.tscn          escena principal
-scripts/cat/cat.gd        cerebro, voz y dibujo del gato
+scripts/cat/cat.gd        cerebro, voz y animación del gato
+assets/cat/              atlas limpios usados en el juego (celdas de 112×112)
+assets/generated/        originales y metadatos de generación
 scripts/world/            isla, agua, árboles, objetos, descubribles, día/noche
 shaders/water.gdshader    mar procedural
 scripts/ui/hud.gd         paneles de observación

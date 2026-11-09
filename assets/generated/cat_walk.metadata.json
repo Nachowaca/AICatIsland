@@ -1,0 +1,58 @@
+{
+	"animation_name": "walking_forward_with_a_gentle_trot_legs_alternating_naturally_tail_swaying",
+	"animation_style": "",
+	"animation_type": "walking forward with a gentle trot, legs alternating naturally, tail swaying",
+	"columns": 6,
+	"directions": [],
+	"frame_count": 6,
+	"frame_height": 256,
+	"frame_paths": [],
+	"frame_regions": [
+		{
+			"h": 256,
+			"w": 256,
+			"x": 0,
+			"y": 0
+		},
+		{
+			"h": 256,
+			"w": 256,
+			"x": 256,
+			"y": 0
+		},
+		{
+			"h": 256,
+			"w": 256,
+			"x": 512,
+			"y": 0
+		},
+		{
+			"h": 256,
+			"w": 256,
+			"x": 768,
+			"y": 0
+		},
+		{
+			"h": 256,
+			"w": 256,
+			"x": 1024,
+			"y": 0
+		},
+		{
+			"h": 256,
+			"w": 256,
+			"x": 1280,
+			"y": 0
+		}
+	],
+	"frame_width": 256,
+	"name": "cat_walk",
+	"prompt": "walking forward with a gentle trot, legs alternating naturally, tail swaying",
+	"rows": 1,
+	"source_image": "res://assets/generated/cat_stand.png",
+	"source_tool": "animate_sprite",
+	"spritesheet_height": 256,
+	"spritesheet_path": "res://assets/generated/cat_walk.png",
+	"spritesheet_width": 1536,
+	"type": "animation"
+}

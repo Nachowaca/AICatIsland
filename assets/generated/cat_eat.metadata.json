@@ -1,0 +1,46 @@
+{
+	"animation_name": "lowering_its_head_to_the_ground_to_sniff_and_nibble_food_chewing_tail_slowly_swaying",
+	"animation_style": "",
+	"animation_type": "lowering its head to the ground to sniff and nibble food, chewing, tail slowly swaying",
+	"columns": 4,
+	"directions": [],
+	"frame_count": 4,
+	"frame_height": 256,
+	"frame_paths": [],
+	"frame_regions": [
+		{
+			"h": 256,
+			"w": 256,
+			"x": 0,
+			"y": 0
+		},
+		{
+			"h": 256,
+			"w": 256,
+			"x": 256,
+			"y": 0
+		},
+		{
+			"h": 256,
+			"w": 256,
+			"x": 512,
+			"y": 0
+		},
+		{
+			"h": 256,
+			"w": 256,
+			"x": 768,
+			"y": 0
+		}
+	],
+	"frame_width": 256,
+	"name": "cat_eat",
+	"prompt": "lowering its head to the ground to sniff and nibble food, chewing, tail slowly swaying",
+	"rows": 1,
+	"source_image": "res://assets/generated/cat_stand.png",
+	"source_tool": "animate_sprite",
+	"spritesheet_height": 256,
+	"spritesheet_path": "res://assets/generated/cat_eat.png",
+	"spritesheet_width": 1024,
+	"type": "animation"
+}

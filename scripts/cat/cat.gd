@@ -43,17 +43,7 @@ const TRAIT_NAMES = {"curiosity": "Curiosidad", "playfulness": "Juguetón", "laz
 
 enum Phase { MOVING, DOING }
 
-@export var cat_scale: float = 1.3:
-	set(v):
-		cat_scale = v
-		queue_redraw()
 @export var walk_speed: float = 1.4
-@export var fur_color: Color = Color(0.96, 0.62, 0.27):
-	set(v):
-		fur_color = v
-		queue_redraw()
-@export var stripe_color: Color = Color(0.74, 0.37, 0.13)
-@export var belly_color: Color = Color(1.0, 0.94, 0.84)
 @export var persist_brain: bool = true
 
 var needs: Dictionary = {"hunger": 75.0, "energy": 85.0, "fun": 65.0, "safety": 90.0, "comfort": 80.0}
@@ -103,6 +93,7 @@ var _lift: float = 0.0
 func _ready() -> void:
 	add_to_group("cat")
 	smooth_ground = true
+	_build_sprite()
 	if Engine.is_editor_hint():
 		return
 	_rng.randomize()
@@ -155,6 +146,7 @@ func _process(delta: float) -> void:
 	var floor_h: float = Interactable.SH_FLOOR if _in_shelter() else 0.0
 	_lift = move_toward(_lift, floor_h, delta * 30.0)
 	_update_position() # suaviza subir/bajar el talud de pasto
+	_apply_pose(delta)
 	queue_redraw()
 
 
@@ -992,169 +984,123 @@ func reset_brain() -> void:
 
 
 # ================================================================ DIBUJO
+# El gato es un AnimatedSprite2D (arte pintado en res://assets/cat/).
+# Este nodo dibuja la sombra; un hijo "Overlay" dibuja encima los globos,
+# las zetas y el polvo.
+
+## Animaciones: archivo, fotogramas por segundo, punto de apoyo (patas) en el fotograma de 256 px.
+const ANIMS = {
+	"walk": [8.0, Vector2(116, 246)],
+	"eat": [4.0, Vector2(121, 250)],
+	"play": [7.0, Vector2(136, 251)],
+	"dig": [8.0, Vector2(145, 250)],
+	"idle": [2.5, Vector2(122, 249)],
+	"groom": [4.0, Vector2(123, 251)],
+	"sleep": [1.5, Vector2(118, 216)],
+}
+const FRAME = 112.0       # tamaño del fotograma en las hojas de res://assets/cat/
+const ART = 256.0         # tamaño original con el que se midieron los puntos de apoyo
+const POSE_ANIM = {
+	"walk": "walk", "eat": "eat", "dig": "dig", "play": "play", "scratch": "play",
+	"sit": "idle", "groom": "groom", "sleep": "sleep", "loaf": "sleep", "roll": "play",
+}
+
+## Tamaño del gato en pantalla (alto aproximado en píxeles al zoom 1).
+@export var sprite_height: float = 46.0
+
+var _sprite: AnimatedSprite2D
+var _overlay: Node2D
+
+
+func _build_sprite() -> void:
+	if _sprite != null:
+		return
+	var frames: SpriteFrames = SpriteFrames.new()
+	frames.remove_animation("default")
+	for anim: String in ANIMS:
+		var tex: Texture2D = load("res://assets/cat/%s.png" % anim) as Texture2D
+		if tex == null:
+			continue
+		frames.add_animation(anim)
+		frames.set_animation_speed(anim, float(ANIMS[anim][0]))
+		frames.set_animation_loop(anim, true)
+		var n: int = int(tex.get_width() / FRAME)
+		for k in n:
+			var at: AtlasTexture = AtlasTexture.new()
+			at.atlas = tex
+			at.region = Rect2(k * FRAME, 0, FRAME, FRAME)
+			frames.add_frame(anim, at)
+	_sprite = AnimatedSprite2D.new()
+	_sprite.name = "Sprite"
+	_sprite.sprite_frames = frames
+	_sprite.centered = false
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	add_child(_sprite)
+	_overlay = Node2D.new()
+	_overlay.name = "Overlay"
+	_overlay.draw.connect(_draw_overlay)
+	add_child(_overlay)
+	_apply_pose(0.0)
+
+
+## Elige animación según la pose, orienta el sprite y lo apoya en el suelo.
+func _apply_pose(delta: float) -> void:
+	if _sprite == null:
+		return
+	var anim: String = POSE_ANIM.get(pose, "idle")
+	if not _sprite.sprite_frames.has_animation(anim):
+		return
+	if _sprite.animation != anim:
+		_sprite.play(anim)
+	elif not _sprite.is_playing():
+		_sprite.play(anim)
+	var k: float = sprite_height / 240.0 * ART / FRAME
+	_sprite.scale = Vector2(k, k)
+	# el arte mira a la izquierda; facing > 0 = hacia la derecha de la pantalla
+	var flip: bool = facing > 0.0
+	if pose == "roll" and sin(_anim_t * 1.5) < 0.0:
+		flip = not flip
+	_sprite.flip_h = flip
+	var anchor: Vector2 = ANIMS[anim][1] * (FRAME / ART)
+	if flip:
+		anchor.x = FRAME - anchor.x
+	_sprite.offset = -anchor
+	_sprite.position = Vector2(0, -_lift)
+	match pose:
+		"scratch":
+			_sprite.rotation = -0.45 * facing
+		"roll":
+			_sprite.rotation = sin(_anim_t * 3.0) * 0.5
+		_:
+			_sprite.rotation = 0.0
+	# al caminar más rápido, las patas también
+	if anim == "walk":
+		_sprite.speed_scale = 1.0 if delta <= 0.0 else clampf(walk_speed / 1.4, 0.7, 1.8)
+	_overlay.queue_redraw()
+
 
 func _draw() -> void:
-	var s: float = cat_scale
-	var lift: Vector2 = Vector2(0, -_lift)
-	draw_set_transform(lift, 0.0, Vector2.ONE)
-	draw_shadow(11.0 * s, Vector2.ZERO, 0.3)
-	var rot: float = 0.0
-	if pose == "scratch":
-		rot = -0.55 * facing
-	elif pose == "dig":
-		rot = sin(_anim_t * 16.0) * 0.07
-	elif pose == "roll":
-		rot = sin(_anim_t * 3.0) * 0.6
-	var bounce: float = 0.0
-	if pose == "play":
-		bounce = absf(sin(_anim_t * 6.0)) * 6.0
-	var fx: float = facing
-	if pose == "roll" and sin(_anim_t * 1.5) < 0.0:
-		fx = -facing
-	draw_set_transform(lift + Vector2(0, -bounce * s), rot, Vector2(fx * s, s))
-	match pose:
-		"sleep", "roll":
-			_draw_lying(pose == "sleep")
-		"loaf":
-			_draw_lying(false)
-		"sit", "groom":
-			_draw_sitting(pose == "groom")
-		"eat", "dig":
-			_draw_standing(true, false)
-		"walk":
-			_draw_standing(false, true)
-		_:
-			_draw_standing(false, pose == "play")
-	draw_set_transform(lift, 0.0, Vector2.ONE)
+	draw_shadow(sprite_height * (0.42 if pose == "sleep" or pose == "loaf" else 0.33), Vector2(0, -_lift), 0.28)
+
+
+func _draw_overlay() -> void:
+	var o: Vector2 = Vector2(0, -_lift)
 	if pose == "dig":
-		# tierra que salta entre las patas
 		for i in 4:
 			var k: float = fmod(_anim_t * 2.5 + float(i) * 0.25, 1.0)
-			draw_circle(Vector2(-facing * (6.0 + k * 12.0), -2.0 - sin(k * PI) * 9.0), 1.3, Color(0.55, 0.42, 0.28, 1.0 - k))
+			_overlay.draw_circle(o + Vector2(-facing * (8.0 + k * 12.0), -2.0 - sin(k * PI) * 9.0), 1.3, Color(0.55, 0.42, 0.28, 1.0 - k))
 	if pose == "sleep":
-		_draw_zzz(s)
+		_draw_zzz(o)
 	if _thought_time > 0.0 and thought != "":
-		_draw_bubble(thought, Vector2(0, -44.0 * s))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		_draw_bubble(thought, o + Vector2(0, -sprite_height - 8.0))
 
 
-func _ell(c: Vector2, rx: float, ry: float, col: Color, outline: bool = true) -> void:
-	fill_ellipse(c, rx, ry, col, 1.2 if outline else 0.0)
-
-
-func _draw_tail(points: PackedVector2Array) -> void:
-	draw_polyline(points, INK, 5.2)
-	draw_polyline(points, fur_color, 3.4)
-	var n: int = points.size()
-	if n >= 2:
-		draw_line(points[n - 2], points[n - 1], stripe_color, 3.4)
-
-
-func _draw_head(hc: Vector2, closed: bool) -> void:
-	# orejas
-	for ear: Array in [[Vector2(-5.5, -2.5), Vector2(-3.5, -11), Vector2(0, -5.5)], [Vector2(1, -6), Vector2(5, -11), Vector2(6.5, -2.5)]]:
-		var e: PackedVector2Array = PackedVector2Array([hc + ear[0], hc + ear[1], hc + ear[2]])
-		draw_colored_polygon(e, fur_color)
-		draw_polyline(PackedVector2Array([e[0], e[1], e[2]]), INK, 1.2)
-		var inner: PackedVector2Array = PackedVector2Array([hc + ear[0].lerp(ear[1], 0.3) + Vector2(0.8, 0.5), hc + ear[1] + Vector2(0, 2.5), hc + ear[2].lerp(ear[1], 0.3) - Vector2(0.8, -0.5)])
-		draw_colored_polygon(inner, Color(1.0, 0.7, 0.72))
-	draw_circle(hc, 6.6, INK)
-	draw_circle(hc, 5.6 + 0.0, fur_color)
-	draw_circle(hc + Vector2(0, -0.3), 5.6, fur_color)
-	# raya de la frente
-	draw_line(hc + Vector2(1, -5.5), hc + Vector2(1.2, -3), stripe_color, 1.3)
-	draw_line(hc + Vector2(-1.2, -5.2), hc + Vector2(-0.6, -3.2), stripe_color, 1.1)
-	# hocico
-	fill_ellipse(hc + Vector2(3.4, 2.4), 3.4, 2.3, belly_color)
-	# ojos
-	var blink: bool = fmod(_anim_t, 4.3) < 0.13
-	for ex: float in [1.0, 4.6]:
-		var ep: Vector2 = hc + Vector2(ex, -0.8)
-		if closed or blink:
-			draw_arc(ep + Vector2(0, -0.5), 1.4, 0.2, PI - 0.2, 6, INK, 1.1)
-		else:
-			draw_circle(ep, 1.45, Color(0.12, 0.16, 0.1))
-			draw_circle(ep + Vector2(0.45, -0.5), 0.5, Color(1, 1, 1))
-	# mejillas y nariz
-	draw_circle(hc + Vector2(1.0, 2.2), 1.3, Color(1.0, 0.55, 0.6, 0.55))
-	draw_colored_polygon(PackedVector2Array([hc + Vector2(5.6, 1.0), hc + Vector2(7.2, 1.0), hc + Vector2(6.4, 2.1)]), Color(0.95, 0.5, 0.55))
-	# bigotes
-	draw_line(hc + Vector2(5.0, 2.6), hc + Vector2(11.5, 1.4), Color(INK, 0.6), 0.6)
-	draw_line(hc + Vector2(5.0, 3.0), hc + Vector2(11.5, 4.0), Color(INK, 0.6), 0.6)
-
-
-func _draw_standing(head_low: bool, moving: bool) -> void:
-	var lp: float = sin(_anim_t * 12.0) if moving and pose == "walk" else 0.0
-	var bob: float = absf(lp) * 0.8
-	var tail_sway: float = sin(_anim_t * 3.0)
-	var tail: PackedVector2Array = PackedVector2Array()
-	for i in 7:
-		var t: float = float(i) / 6.0
-		tail.append(Vector2(-10, -11 - bob) + Vector2(-5.0 * t + tail_sway * 3.0 * t * t, -15.0 * t + t * t * 3.0))
-	_draw_tail(tail)
-	# patas lejanas
-	var far: Color = fur_color.darkened(0.2)
-	for lx: float in [-4.0, 9.0]:
-		var off: float = lp * 2.0 * (1.0 if lx < 0 else -1.0)
-		draw_line(Vector2(lx, -8), Vector2(lx + off, 0), INK, 4.4)
-		draw_line(Vector2(lx, -8), Vector2(lx + off, -0.6), far, 2.8)
-	_ell(Vector2(0, -11 - bob), 11.0, 6.5, fur_color)
-	_ell(Vector2(1, -8.2 - bob), 7.0, 2.4, belly_color, false)
-	for sx: float in [-6.0, -2.0, 2.0]:
-		draw_line(Vector2(sx, -17 - bob), Vector2(sx + 1.6, -12.5 - bob), stripe_color, 1.8)
-	# patas cercanas
-	for lx2: float in [-7.0, 6.0]:
-		var off2: float = -lp * 2.0 * (1.0 if lx2 < 0 else -1.0)
-		draw_line(Vector2(lx2, -8 - bob), Vector2(lx2 + off2, 0), INK, 4.4)
-		draw_line(Vector2(lx2, -8 - bob), Vector2(lx2 + off2, -0.6), fur_color, 2.8)
-		draw_circle(Vector2(lx2 + off2, -0.5), 1.5, belly_color)
-	var hc: Vector2 = Vector2(13, -9) if head_low else Vector2(11, -18 - bob)
-	_draw_head(hc, false)
-
-
-func _draw_sitting(groom: bool) -> void:
-	var tail: PackedVector2Array = PackedVector2Array()
-	var flick: float = sin(_anim_t * 2.0) * 0.15
-	for i in 8:
-		var a: float = PI * 0.95 - float(i) / 7.0 * (PI * 0.75) + flick * float(i) / 7.0
-		tail.append(Vector2(0, -2) + Vector2(cos(a) * 11.0, sin(a) * 3.5))
-	_ell(Vector2(-3, -7), 8.0, 7.0, fur_color)
-	draw_line(Vector2(-7, -11), Vector2(-4, -6), stripe_color, 1.8)
-	draw_line(Vector2(-3, -13), Vector2(-1, -9), stripe_color, 1.8)
-	_ell(Vector2(2, -14), 6.0, 8.5, fur_color)
-	_ell(Vector2(4, -12), 3.0, 5.5, belly_color, false)
-	draw_line(Vector2(4, -9), Vector2(4, 0), INK, 4.2)
-	draw_line(Vector2(4, -9), Vector2(4, -0.6), fur_color, 2.6)
-	if groom:
-		var lick: float = sin(_anim_t * 8.0) * 1.5
-		draw_line(Vector2(7, -11), Vector2(10, -19 + lick), INK, 4.2)
-		draw_line(Vector2(7, -11), Vector2(10, -19 + lick), fur_color, 2.6)
-	else:
-		draw_line(Vector2(7, -9), Vector2(7, 0), INK, 4.2)
-		draw_line(Vector2(7, -9), Vector2(7, -0.6), fur_color, 2.6)
-	_draw_tail(tail)
-	_draw_head(Vector2(4, -25), groom)
-
-
-func _draw_lying(asleep: bool) -> void:
-	var breath: float = sin(_anim_t * 2.0) * 0.5
-	_ell(Vector2(0, -6), 12.0, 6.0 + breath, fur_color)
-	for sx: float in [-6.0, -2.0, 2.0]:
-		draw_line(Vector2(sx, -11.5 - breath), Vector2(sx + 1.4, -7.5), stripe_color, 1.8)
-	var tail: PackedVector2Array = PackedVector2Array()
-	for i in 8:
-		var a: float = PI - float(i) / 7.0 * (PI * 0.8)
-		tail.append(Vector2(0, -2) + Vector2(cos(a) * 12.5, sin(a) * 3.5))
-	_draw_tail(tail)
-	_draw_head(Vector2(9, -8) if asleep else Vector2(10, -13), asleep)
-
-
-func _draw_zzz(s: float) -> void:
+func _draw_zzz(o: Vector2) -> void:
 	var font: Font = ThemeDB.fallback_font
 	for i in 3:
 		var k: float = fmod(_anim_t * 0.5 + float(i) / 3.0, 1.0)
-		var p: Vector2 = Vector2(10 * s + k * 10.0, -16 * s - k * 22.0)
-		draw_string(font, p, "z", HORIZONTAL_ALIGNMENT_LEFT, -1, int(9 + k * 6), Color(1, 1, 1, 1.0 - k))
+		var p: Vector2 = o + Vector2(-facing * 8.0 + k * 10.0, -sprite_height * 0.55 - k * 22.0)
+		_overlay.draw_string(font, p, "z", HORIZONTAL_ALIGNMENT_LEFT, -1, int(9 + k * 6), Color(1, 1, 1, 1.0 - k))
 
 
 func _draw_bubble(text: String, at: Vector2) -> void:
@@ -1163,7 +1109,7 @@ func _draw_bubble(text: String, at: Vector2) -> void:
 	var size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
 	var rect: Rect2 = Rect2(at - Vector2(size.x * 0.5 + 6, size.y + 4), Vector2(size.x + 12, size.y + 6))
 	var a: float = clampf(_thought_time, 0.0, 1.0)
-	draw_rect(rect, Color(0.98, 0.95, 0.88, 0.92 * a))
-	draw_rect(rect, Color(INK, a), false, 1.2)
-	draw_colored_polygon(PackedVector2Array([Vector2(at.x - 3, rect.end.y), Vector2(at.x + 3, rect.end.y), Vector2(at.x, rect.end.y + 5)]), Color(0.98, 0.95, 0.88, 0.92 * a))
-	draw_string(font, Vector2(rect.position.x + 6, rect.end.y - 5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(INK, a))
+	_overlay.draw_rect(rect, Color(0.98, 0.95, 0.88, 0.92 * a))
+	_overlay.draw_rect(rect, Color(INK, a), false, 1.2)
+	_overlay.draw_colored_polygon(PackedVector2Array([Vector2(at.x - 3, rect.end.y), Vector2(at.x + 3, rect.end.y), Vector2(at.x, rect.end.y + 5)]), Color(0.98, 0.95, 0.88, 0.92 * a))
+	_overlay.draw_string(font, Vector2(rect.position.x + 6, rect.end.y - 5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(INK, a))

@@ -1,6 +1,6 @@
 # GatitoAI — Pendientes
 
-Concepto: isla isométrica del Japón antiguo, todo dibujado con código (sin assets).
+Concepto: isla isométrica del Japón antiguo con entorno procedural y gato con sprites IA.
 Un gatito vive solo: pocas pautas simples, y él descubre, aprende y evoluciona.
 
 Leyenda: `[x]` hecho · `[~]` en curso / versión 1 · `[ ]` pendiente
@@ -26,6 +26,11 @@ Leyenda: `[x]` hecho · `[~]` en curso / versión 1 · `[ ]` pendiente
 - [x] Cerebro persistente entre sesiones (`user://gatito_brain.json`)
 - [x] HUD compacto y plegable (H oculta), cámara que sigue al gato, velocidades x1/x4/x10
 - [x] Pruebas automáticas de la IA (`res://tests/test_cat_ai.gd`, 7 pruebas)
+- [x] Gato naranja atigrado con sprites IA: caminar, reposar, dormir, comer, jugar, escarbar y acicalarse
+- [x] Atlas limpios y reducidos a celdas de 112×112, sombra y globos sobre el personaje
+- [ ] Direcciones traseras isométricas del gato (actualmente espejo horizontal de una vista 3/4)
+- [ ] Animaciones propias de rascar y revolcarse (ahora reutilizan juego); loaf reutiliza dormir
+- [ ] Pulir continuidad entre fotogramas y revisar todas las poses en movimiento
 
 ## 1. Descubrir solo (sin saber de antemano)
 Idea: el MUNDO define qué hace cada cosa; el gato no lo sabe y lo aprende probando.
