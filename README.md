@@ -60,3 +60,6 @@ del gato, con encuadre automático al tamaño de ventana. El botón alterna entr
 fija al terminar; no guarda ni carga la memoria del gato ni adelanta el contador de días.
 
 El menú inicia cada nueva partida con saciedad, energía, diversión, seguridad y confort al 100 %, manteniendo el aprendizaje previo.
+
+En el menú hay dos inicios: **Nueva vida con recuerdos** conserva aprendizaje;
+**Experimento limpio** empieza con cerebro vacío y no lee ni modifica la memoria persistente.

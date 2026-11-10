@@ -43,6 +43,7 @@ const TRAIT_NAMES = {"curiosity": "Curiosidad", "playfulness": "Juguetón", "laz
 
 enum Phase { MOVING, DOING }
 const START_FULL_NEEDS_META: StringName = &"gatito_start_full_needs"
+const CLEAN_EXPERIMENT_META: StringName = &"gatito_clean_experiment"
 
 
 @export var walk_speed: float = 1.4
@@ -103,9 +104,13 @@ func _ready() -> void:
 		return
 	_rng.randomize()
 	var root: Window = get_tree().root
-	var full_needs_start: bool = root.has_meta(START_FULL_NEEDS_META)
-	if full_needs_start:
+	var clean_experiment: bool = root.has_meta(CLEAN_EXPERIMENT_META)
+	var full_needs_start: bool = clean_experiment or root.has_meta(START_FULL_NEEDS_META)
+	if root.has_meta(START_FULL_NEEDS_META):
 		root.remove_meta(START_FULL_NEEDS_META)
+	if clean_experiment:
+		root.remove_meta(CLEAN_EXPERIMENT_META)
+		persist_brain = false # Nunca leer ni escribir la memoria real del jugador.
 	_island = get_tree().get_first_node_in_group("island") as Island
 	_day_night = get_tree().get_first_node_in_group("day_night") as DayNight
 	_reset_learned()
@@ -119,7 +124,9 @@ func _ready() -> void:
 			set_needs_full()
 		free_brain.start_needs_full = full_needs_start
 		free_brain.setup(self)
-		if full_needs_start:
+		if clean_experiment:
+			_log("Experimento limpio: cerebro nuevo, sin cargar ni guardar recuerdos.")
+		elif full_needs_start:
 			_log("Nueva partida: todas las necesidades empiezan al 100 %.")
 		return
 	if persist_brain:

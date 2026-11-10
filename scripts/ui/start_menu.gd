@@ -6,6 +6,7 @@ var backdrop: Node2D
 var _entering: bool = false
 
 @onready var start_button: Button = $Interface/Screen/Margins/Columns/Menu/Start
+@onready var clean_button: Button = $Interface/Screen/Margins/Columns/Menu/CleanExperiment
 @onready var quit_button: Button = $Interface/Screen/Margins/Columns/Menu/Quit
 @onready var status: Label = $Interface/Screen/Margins/Columns/Menu/Status
 
@@ -28,6 +29,7 @@ func _ready() -> void:
 	_fit_background()
 	get_viewport().size_changed.connect(_fit_background)
 	start_button.pressed.connect(_enter_island)
+	clean_button.pressed.connect(_enter_clean_experiment)
 	quit_button.pressed.connect(func() -> void: get_tree().quit())
 	start_button.grab_focus()
 
@@ -52,18 +54,29 @@ func _fit_background() -> void:
 	camera.position = (low + high) * 0.5 - Vector2(menu_width * 0.5 / zoom_factor, 0)
 
 func _enter_island() -> void:
+	_launch_game(false)
+
+func _enter_clean_experiment() -> void:
+	_launch_game(true)
+
+func _launch_game(clean: bool) -> void:
 	if _entering:
 		return
 	_entering = true
 	start_button.disabled = true
-	status.text = "La isla te espera… Necesidades iniciales al 100 %."
+	clean_button.disabled = true
+	status.text = "Experimento aislado…" if clean else "La isla te espera… Necesidades al 100 %."
 	get_tree().root.set_meta(Cat.START_FULL_NEEDS_META, true)
+	if clean:
+		get_tree().root.set_meta(Cat.CLEAN_EXPERIMENT_META, true)
 	var error: Error = get_tree().change_scene_to_file("res://scenes/main.tscn")
 	if error != OK:
-		if get_tree().root.has_meta(Cat.START_FULL_NEEDS_META):
-			get_tree().root.remove_meta(Cat.START_FULL_NEEDS_META)
+		for meta_name: StringName in [Cat.START_FULL_NEEDS_META, Cat.CLEAN_EXPERIMENT_META]:
+			if get_tree().root.has_meta(meta_name):
+				get_tree().root.remove_meta(meta_name)
 		_entering = false
 		start_button.disabled = false
+		clean_button.disabled = false
 		status.text = "No se pudo abrir la isla. Intenta otra vez."
 		push_error("Error al iniciar la isla: %s" % error_string(error))
 

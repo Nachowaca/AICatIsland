@@ -121,3 +121,5 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [x] Plan de actividades autónomas: PLAN_ACTIVIDADES.md.
 
 - [x] Nueva partida desde el menú: cinco necesidades al 100 %, recuerdos aprendidos conservados.
+
+- [x] Menú: experimento limpio con necesidades al 100 %, cerebro vacío y sin lectura/escritura de la memoria persistente.

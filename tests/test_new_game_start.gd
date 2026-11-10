@@ -17,6 +17,27 @@ func test_inicio_real_de_menu_pone_necesidades_al_cien_sin_guardar_memoria() -> 
 	assert(not cat.free_brain.sleeping)
 	main.free()
 
+func test_experimento_limpio_no_carga_ni_guarda_el_cerebro_real() -> void:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	var main: Node2D = (load("res://scenes/main.tscn") as PackedScene).instantiate() as Node2D
+	var cat: Cat = main.get_node("Entities/Cat") as Cat
+	main.process_mode = Node.PROCESS_MODE_DISABLED
+	main.get_node("HUD").free()
+	main.get_node("IslandAmbience").free()
+	tree.root.set_meta(Cat.START_FULL_NEEDS_META, true)
+	tree.root.set_meta(Cat.CLEAN_EXPERIMENT_META, true)
+	tree.root.add_child(main)
+	assert(not tree.root.has_meta(Cat.START_FULL_NEEDS_META))
+	assert(not tree.root.has_meta(Cat.CLEAN_EXPERIMENT_META))
+	assert(not cat.persist_brain, "La prueba limpia debe desactivar persistencia antes de setup")
+	assert(cat.free_brain.memory.is_empty())
+	assert(cat.free_brain.models.is_empty())
+	assert(cat.free_brain.history.is_empty())
+	# Se permite observación sensorial nueva del mundo; no se cargan recuerdos previos.
+	for need: String in cat.needs:
+		assert(is_equal_approx(float(cat.needs[need]), 100.0))
+	main.free()
+
 func test_necesidades_nuevas_activas_al_cien() -> void:
 	var cat: Cat = Cat.new()
 	cat.needs = {"hunger": 23.0, "energy": 5.0, "fun": 0.0, "safety": 11.0, "comfort": 67.0}
