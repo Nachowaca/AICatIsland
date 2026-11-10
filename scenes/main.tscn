@@ -113,7 +113,7 @@ display_name = "Temari"
 grid_pos = Vector2(14.5, 17.2)
 
 [node name="Torii" type="Node2D" parent="Entities" unique_id=707146018]
-position = Vector2(-243.19998, 595.2)
+position = Vector2(-293.99997, 469.00003)
 rotation = 0.019460872
 scale = Vector2(-1.3188256, 1.2863696)
 script = ExtResource("4_int")
