@@ -38,4 +38,13 @@ La mascota no necesita hablar constantemente; el silencio también cuenta.
 - [ ] Probar contradicciones, repetición, frecuencia, traducción y velocidades x1/x4/x10.
 - [ ] Revisar que la voz del cerebro clásico no se duplique con el modo experimental.
 
-Este es un plan de diseño; aún no añade nuevas frases al gato.
+Las líneas anteriores son propuestas; ver el estado real de implementación abajo.
+
+## Primera implementación procedural
+- Modo experimental: CatVoice combina fragmentos locales; VoiceObserver traduce eventos y necesidades a expresiones. No usa LLM, red ni cambia decisiones.
+- Sorpresa en primera ejecución de cada verbo y al cambiar una apariencia descubierta. Se conservan los eventos vistos junto a la memoria experimental; R los reinicia.
+- Necesidades, diversión, día/noche y recuerdos genéricos dependen del estado observado. Hay cola acotada, prioridades y separación mínima de 4 s reales; RNG independiente del cerebro.
+- Descubrimientos visuales detectados durante interacciones; aún no todos los cambios ambientales o percepciones nuevas disparan textos. Un máximo de 64 eventos en cola implica que una ráfaga extrema puede descartar eventos antiguos.
+- El lenguaje usa fragmentos escritos por desarrolladores, no aprendizaje lingüístico ni creación libre ilimitada. El gato no inventa vocabulario por sí mismo.
+- La mención de recuerdos no identifica lugares ni experiencias específicas; aún falta lenguaje vinculado al contenido concreto de memorias.
+- Los globos duran tiempo real, incluso con x4/x10. No se implementó catálogo externo ni traducción.

@@ -133,7 +133,7 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 	_anim_t += delta
-	_thought_time -= delta
+	_thought_time -= delta / maxf(Engine.time_scale, 0.001) if experimental_mode else delta
 	_update_needs(delta)
 	_mark_visit()
 	if experimental_mode and free_brain != null:

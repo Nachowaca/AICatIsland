@@ -42,6 +42,7 @@ var _save_timer: float = 0.0
 var sleeping: bool = false
 var sleep_blocked: bool = false
 var _loaded_report: Dictionary = {}
+var voice: VoiceObserver = VoiceObserver.new()
 
 func setup(host: Node2D) -> void:
 	cat = host
@@ -65,6 +66,8 @@ func setup(host: Node2D) -> void:
 			sleep_blocked = bool(parsed.get("sleep_blocked", false))
 			memory = parsed.get("memory", {})
 			models = parsed.get("models", {})
+			voice.seen_actions = parsed.get("voice_actions", {})
+			voice.seen_discoveries = parsed.get("voice_discoveries", {})
 			places = parsed.get("places", {})
 			completed_trials = int(parsed.get("completed_trials", 0))
 	cat._log("Experimento libre: sin soluciones conocidas. Semilla %d." % actual_seed)
@@ -199,8 +202,20 @@ func choose() -> void:
 	active = false
 	label = "%s · %s" % [choice.verb, "suelo" if choice.path == "" else String(choice.path).get_file()]
 
+func _tick_voice(allow_sleep: bool = false) -> void:
+	if sleeping and not allow_sleep:
+		return
+	var now: float = float(Time.get_ticks_msec()) / 1000.0
+	if not sleeping:
+		var night: bool = cat._day_night != null and cat._day_night.is_night()
+		voice.periodic(cat.needs, night, not memory.is_empty(), now)
+	var text: String = voice.next(now)
+	if text != "":
+		cat._say(text)
+
 func tick(dt: float) -> void:
 	elapsed_world += dt
+	_tick_voice()
 	for need: String in cat.needs:
 		minimums[need] = minf(float(minimums.get(need, 100.0)), float(cat.needs[need]))
 	_save_timer += dt
@@ -209,6 +224,9 @@ func tick(dt: float) -> void:
 		save()
 	var was_sleeping: bool = sleeping
 	if update_sleep_state():
+		if not was_sleeping:
+			voice.enqueue(CatVoice.SLEEP, 3)
+			_tick_voice(true)
 		cat.action = "free_sleep"
 		cat.phase = 1
 		cat.pose = "sleep"
@@ -217,6 +235,7 @@ func tick(dt: float) -> void:
 		cat._clamp_needs()
 		return
 	if was_sleeping:
+		voice.enqueue(CatVoice.WAKE, 2)
 		cat.pose = "sit"
 		choose()
 		return
@@ -226,6 +245,7 @@ func tick(dt: float) -> void:
 	if not active:
 		baseline = cat.needs.duplicate()
 		active = true
+		voice.action_started(String(choice.get("verb", "")))
 	elapsed += dt
 	var verb: String = choice.get("verb", "sniff")
 	cat.pose = {"sniff": "eat", "bite": "eat", "dig": "dig", "paw": "play", "lie": "sit", "groom": "groom"}[verb]
@@ -239,10 +259,17 @@ func tick(dt: float) -> void:
 			choose()
 			return
 	var night: bool = cat._day_night != null and cat._day_night.is_night()
+	var before_appearance: String = appearance_key(target as IsoEntity) if target is Discoverable else ""
 	var effects: Dictionary = Effects.respond(target, verb, dt, elapsed, night)
+	if target is Discoverable:
+		var after_appearance: String = appearance_key(target as IsoEntity)
+		if after_appearance != before_appearance:
+			voice.discovery(after_appearance)
 	for need: String in effects:
 		if need != "_once":
 			cat.needs[need] = float(cat.needs[need]) + float(effects[need]) * dt
+	if effects.has("_once"):
+		voice.result(effects["_once"])
 	for need: String in effects.get("_once", {}):
 		cat.needs[need] = float(cat.needs[need]) + float(effects._once[need])
 	cat._clamp_needs()
@@ -279,6 +306,8 @@ func finish_trial() -> void:
 		if (before <= 0.0 and after <= 0.0) or (before >= 100.0 and after >= 100.0):
 			continue # No sentir variación en una barra saturada no equivale a efecto nulo.
 		measured[need] = (after - before) / elapsed
+	if float(measured.get("fun", 0.0)) > 1.0:
+		voice.enqueue(CatVoice.FUN_POSITIVE, 2)
 	_record_effects(memory, key, measured)
 	var model_key: String = choice.get("model_key", "")
 	if model_key != "":
@@ -295,7 +324,8 @@ func report() -> Dictionary:
 	data.merge({"version": 3, "seed": actual_seed, "completed_trials": completed_trials,
 		"parameters": {"awake_island_hours": awake_island_hours, "sleep_recovery_per_second": sleep_recovery_per_second, "sleep_wake_energy": sleep_wake_energy, "satiety_minutes": satiety_minutes, "curiosity": curiosity, "random_choice": random_choice, "learning_rate": learning_rate, "perception_radius": perception_radius, "travel_cost": travel_cost, "trial_seconds": trial_seconds, "need_weights": need_weights},
 		"needs": cat.needs.duplicate(), "sleeping": sleeping, "sleep_blocked": sleep_blocked,
-		"minimums": minimums, "memory": memory, "models": models, "places": places, "recent_trials": history}, true)
+		"minimums": minimums, "memory": memory, "models": models, "places": places, "recent_trials": history,
+		"voice_actions": voice.seen_actions, "voice_discoveries": voice.seen_discoveries}, true)
 	return data
 
 func save() -> void:
@@ -308,6 +338,9 @@ func save() -> void:
 func reset() -> void:
 	memory.clear()
 	models.clear()
+	voice.seen_actions.clear()
+	voice.seen_discoveries.clear()
+	voice.pending.clear()
 	places.clear()
 	history.clear()
 	completed_trials = 0

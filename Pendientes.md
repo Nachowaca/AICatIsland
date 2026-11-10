@@ -114,3 +114,5 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [x] Plan de textos por actividad y contexto: PLAN_TEXTOS_GATITO.md (sin implementar).
 - [ ] Escoger un lugar seguro aprendido para dormir; interrupción general, memoria espacial de recursos y planes de varios pasos.
 - [ ] Observar en vivo varias semillas: alimentación, sueño, necesidades críticas y bloqueo de sueño.
+
+- [~] Voz procedural local experimental: sorpresa, necesidades, diversión, día/noche y recuerdos genéricos; falta lenguaje de memorias concretas y evaluación de repetición. Ver PLAN_TEXTOS_GATITO.md.
