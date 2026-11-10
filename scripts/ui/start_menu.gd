@@ -56,9 +56,12 @@ func _enter_island() -> void:
 		return
 	_entering = true
 	start_button.disabled = true
-	status.text = "La isla te espera…"
+	status.text = "La isla te espera… Necesidades iniciales al 100 %."
+	get_tree().root.set_meta(Cat.START_FULL_NEEDS_META, true)
 	var error: Error = get_tree().change_scene_to_file("res://scenes/main.tscn")
 	if error != OK:
+		if get_tree().root.has_meta(Cat.START_FULL_NEEDS_META):
+			get_tree().root.remove_meta(Cat.START_FULL_NEEDS_META)
 		_entering = false
 		start_button.disabled = false
 		status.text = "No se pudo abrir la isla. Intenta otra vez."

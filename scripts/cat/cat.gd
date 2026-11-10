@@ -42,6 +42,8 @@ const NEED_NAMES = {"hunger": "Saciedad", "energy": "Energía", "fun": "Diversi�
 const TRAIT_NAMES = {"curiosity": "Curiosidad", "playfulness": "Juguetón", "laziness": "Pereza", "bravery": "Valentía"}
 
 enum Phase { MOVING, DOING }
+const START_FULL_NEEDS_META: StringName = &"gatito_start_full_needs"
+
 
 @export var walk_speed: float = 1.4
 @export var persist_brain: bool = true
@@ -100,6 +102,10 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 	_rng.randomize()
+	var root: Window = get_tree().root
+	var full_needs_start: bool = root.has_meta(START_FULL_NEEDS_META)
+	if full_needs_start:
+		root.remove_meta(START_FULL_NEEDS_META)
 	_island = get_tree().get_first_node_in_group("island") as Island
 	_day_night = get_tree().get_first_node_in_group("day_night") as DayNight
 	_reset_learned()
@@ -109,10 +115,18 @@ func _ready() -> void:
 			free_brain = FreeCatBrain.new()
 			free_brain.name = "FreeBrain"
 			add_child(free_brain)
+		if full_needs_start:
+			set_needs_full()
+		free_brain.start_needs_full = full_needs_start
 		free_brain.setup(self)
+		if full_needs_start:
+			_log("Nueva partida: todas las necesidades empiezan al 100 %.")
 		return
 	if persist_brain:
 		_load_brain()
+	if full_needs_start:
+		set_needs_full()
+		_log("Nueva partida: todas las necesidades empiezan al 100 %.")
 	if _day_night:
 		_day_night.new_day.connect(_on_new_day)
 	for n: Node in get_tree().get_nodes_in_group("discoverable"):
@@ -199,6 +213,13 @@ func _update_needs(delta: float) -> void:
 		needs.comfort += 1.0 * delta
 	_clamp_needs()
 
+
+func set_needs_full() -> void:
+	for need: String in needs:
+		needs[need] = 100.0
+	if free_brain != null:
+		free_brain.sleeping = false
+		free_brain.sleep_blocked = false
 
 func _clamp_needs() -> void:
 	for k: String in needs:

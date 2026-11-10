@@ -119,3 +119,5 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 
 - [~] Cardúmenes decorativos submarinos y peces varados interactuables; pendiente observar supervivencia con menor abundancia.
 - [x] Plan de actividades autónomas: PLAN_ACTIVIDADES.md.
+
+- [x] Nueva partida desde el menú: cinco necesidades al 100 %, recuerdos aprendidos conservados.

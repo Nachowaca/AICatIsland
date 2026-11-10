@@ -43,6 +43,8 @@ var sleeping: bool = false
 var sleep_blocked: bool = false
 var _loaded_report: Dictionary = {}
 var voice: VoiceObserver = VoiceObserver.new()
+## Señal de una nueva partida; conserva memoria aprendida pero no necesidades previas.
+var start_needs_full: bool = false
 
 func setup(host: Node2D) -> void:
 	cat = host
@@ -58,12 +60,13 @@ func setup(host: Node2D) -> void:
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MEMORY_PATH))
 		if parsed is Dictionary:
 			_loaded_report = parsed.duplicate(true)
-			if parsed.get("needs", null) is Dictionary:
-				for need: String in cat.needs:
-					if parsed.needs.has(need):
-						cat.needs[need] = clampf(float(parsed.needs[need]), 0.0, 100.0)
-			sleeping = bool(parsed.get("sleeping", false))
-			sleep_blocked = bool(parsed.get("sleep_blocked", false))
+			if not start_needs_full:
+				if parsed.get("needs", null) is Dictionary:
+					for need: String in cat.needs:
+						if parsed.needs.has(need):
+							cat.needs[need] = clampf(float(parsed.needs[need]), 0.0, 100.0)
+				sleeping = bool(parsed.get("sleeping", false))
+				sleep_blocked = bool(parsed.get("sleep_blocked", false))
 			memory = parsed.get("memory", {})
 			models = parsed.get("models", {})
 			voice.seen_actions = parsed.get("voice_actions", {})
@@ -72,6 +75,8 @@ func setup(host: Node2D) -> void:
 			completed_trials = int(parsed.get("completed_trials", 0))
 	cat._log("Experimento libre: sin soluciones conocidas. Semilla %d." % actual_seed)
 	choose()
+	if start_needs_full:
+		save() # Nueva partida: conserva lo aprendido, pero inicia necesidades/sueño nuevos.
 
 func energy_decay_per_second() -> float:
 	var day_seconds: float = 240.0

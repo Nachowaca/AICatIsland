@@ -58,3 +58,5 @@ Abrir `res://tests/dev_day_night.tscn` y pulsar **F6**. Muestra toda la isla, si
 del gato, con encuadre automático al tamaño de ventana. El botón alterna entre
 12:00 y 21:00 en cuatro segundos, pasando por atardecer o amanecer. La hora queda
 fija al terminar; no guarda ni carga la memoria del gato ni adelanta el contador de días.
+
+El menú inicia cada nueva partida con saciedad, energía, diversión, seguridad y confort al 100 %, manteniendo el aprendizaje previo.
