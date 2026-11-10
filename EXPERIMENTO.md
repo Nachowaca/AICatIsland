@@ -88,3 +88,9 @@ Cambiar parámetros no borra el aprendizaje: usar R para una comparación desde 
 - Se guardan las necesidades y el estado de sueño con la memoria experimental; una partida vieja sin esos campos conserva valores iniciales. R borra aprendizaje, no reinicia necesidades.
 - La supervivencia sostenida y los patrones de sueño aún requieren observación en vivo; las pruebas unitarias no la demuestran.
 - Plan de expresión propuesto en PLAN_TEXTOS_GATITO.md; todavía no se implementa.
+
+## Mar y peces varados
+- Cardúmenes decorativos nadan en el agua; no son recursos ni seleccionables por el cerebro.
+- Los recursos Fish se varan sobre tierra transitable: 1 inicial, máximo 5, nuevo intento cada 35 s de juego (más rápido al amanecer). Son configurables en Main.
+- Los varados aparecen mediante reposición en la costa; aún no hay animación ni transferencia individual del cardumen hacia la playa.
+- Los valores anteriores de 8 iniciales/12 máximo/8 s en la sección histórica ya no son los actuales. Observar si la menor abundancia permite aprender a alimentarse.

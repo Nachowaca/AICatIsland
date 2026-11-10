@@ -2,9 +2,9 @@ class_name IslandGame
 extends Node2D
 ## Controlador principal: aparición de pescado, cámara y controles de observación.
 
-@export var max_fish: int = 12
-@export var initial_fish: int = 8
-@export var spawn_interval: float = 8.0
+@export var max_fish: int = 5
+@export var initial_fish: int = 1
+@export var spawn_interval: float = 35.0
 
 const FISH_SEPARATION: float = 1.3
 
@@ -27,7 +27,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_spawn_t += delta
-	# Al amanecer "los pescadores" dejan más pescado en la orilla
+	# La marea deposita recursos ocasionalmente, algo más frecuente al amanecer.
 	var dawn: bool = day_night.hour > 5.0 and day_night.hour < 8.5
 	if _spawn_t >= spawn_interval * (0.4 if dawn else 1.0):
 		_spawn_t = 0.0
@@ -69,11 +69,11 @@ func spawn_fish_at(pair: Array) -> bool:
 	if fish.size() >= maxi(0, max_fish):
 		return false
 	var spots: Array = _valid_shore_spots(pair)
-	if spots.is_empty() or not _fish_space_free(spots[1], fish):
+	if spots.is_empty() or not _fish_space_free(spots[0], fish):
 		return false
 	var f: Fish = Fish.new()
 	f.name = "Fish"
-	f.grid_pos = spots[1]
+	f.grid_pos = spots[0]
 	f.land_spot = spots[0]
 	entities.add_child(f, true)
 	return true
@@ -104,16 +104,17 @@ func _snap_fish_to_shore() -> void:
 		if placed.size() < maxi(0, max_fish):
 			for pair: Array in island.shore_pairs:
 				var spots: Array = _valid_shore_spots(pair)
-				if spots.is_empty() or not _fish_space_free(spots[1], placed):
+				if spots.is_empty() or not _fish_space_free(spots[0], placed):
 					continue
-				var dd: float = (spots[1] as Vector2).distance_to(f.grid_pos)
+				var dd: float = (spots[0] as Vector2).distance_to(f.grid_pos)
 				if dd < bd:
 					bd = dd
 					best = spots
 		if best.is_empty():
 			f.queue_free()
 		else:
-			f.grid_pos = best[1]
+			f.elevated = true
+			f.grid_pos = best[0]
 			f.land_spot = best[0]
 			placed.append(f)
 

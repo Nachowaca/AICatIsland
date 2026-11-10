@@ -31,7 +31,7 @@ func _check_coast(main: Node2D) -> void:
 		var matched: bool = false
 		for pair: Array in island.shore_pairs:
 			var spots: Array = island.shore_spots(pair)
-			if fish[i].grid_pos.is_equal_approx(spots[1]) and fish[i].land_spot.is_equal_approx(spots[0]):
+			if fish[i].grid_pos.is_equal_approx(spots[0]) and fish[i].land_spot.is_equal_approx(spots[0]):
 				matched = true
 				break
 		assert(matched, "Cada pescado procede de shore_spots de la costa real")
@@ -41,9 +41,9 @@ func _check_coast(main: Node2D) -> void:
 
 func test_exports_y_poblacion_inicial() -> void:
 	var defaults: Node2D = (load("res://scenes/main.tscn") as PackedScene).instantiate() as Node2D
-	assert(defaults.max_fish == 12)
-	assert(defaults.initial_fish == 8)
-	assert(is_equal_approx(defaults.spawn_interval, 8.0))
+	assert(defaults.max_fish == 5)
+	assert(defaults.initial_fish == 1)
+	assert(is_equal_approx(defaults.spawn_interval, 35.0))
 	(defaults.get_node("Entities/Cat") as Cat).persist_brain = false
 	defaults.free()
 	var main: Node2D = _world()

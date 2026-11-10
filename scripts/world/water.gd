@@ -23,6 +23,10 @@ func _ready() -> void:
 		if not _island.regenerated.is_connected(_rebuild):
 			_island.regenerated.connect(_rebuild)
 	_rebuild()
+	var schools: FishSchools = FishSchools.new()
+	schools.name = "FishSchools"
+	schools.set_island(_island)
+	add_child(schools)
 	set_process(not Engine.is_editor_hint())
 
 

@@ -116,3 +116,6 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [ ] Observar en vivo varias semillas: alimentación, sueño, necesidades críticas y bloqueo de sueño.
 
 - [~] Voz procedural local experimental: sorpresa, necesidades, diversión, día/noche y recuerdos genéricos; falta lenguaje de memorias concretas y evaluación de repetición. Ver PLAN_TEXTOS_GATITO.md.
+
+- [~] Cardúmenes decorativos submarinos y peces varados interactuables; pendiente observar supervivencia con menor abundancia.
+- [x] Plan de actividades autónomas: PLAN_ACTIVIDADES.md.
