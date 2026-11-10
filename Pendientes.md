@@ -100,12 +100,11 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 
 - [x] Test dev de iluminación con botón Día/Noche: `res://tests/dev_day_night.tscn` (F6); transición de 4 s y memoria aislada.
 
-- [x] Pantalla de inicio en pantalla completa: isla animada de fondo, Entrar/Salir y F11; fondo sin persistencia del cerebro.
-
 ## Plan de audio
 - [x] Dirección de SFX, música chill, mar y noche cozy: [PLAN_AUDIO.md](PLAN_AUDIO.md).
-- [~] Audio fase A inicial: mar, brisa y grillos, buses/volúmenes y test dev integrados; pendiente escucha del usuario.
-- [ ] Continuar con gato/objetos y después música y mezcla.
+- [ ] Implementar por fases: ambiente → gato/objetos → música y mezcla.
+
+- [~] Audio fase A inicial: mar, brisa y grillos, buses/volúmenes y test dev integrados; pendiente escucha del usuario. Ver PLAN_AUDIO.md.
 
 - [x] Experimento: aprendizaje compartido por apariencia/verbo, sin conocimiento alimentario previo; manejo de observaciones saturadas.
 - [x] Costa con 8 pescados iniciales, tope 12 y reposición cada 8 s; saciedad experimental configurable (6 min para gastar 100).

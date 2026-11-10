@@ -20,10 +20,7 @@ Los dos chōchin de papel también usan sprites basados en referencia. El mar es
 - El gato habla según su ánimo, lo que le pasa y lo que recuerda
 
 ## Cómo probarlo
-Abrir el proyecto en Godot 4.7 y pulsar **F5**: inicia en pantalla completa con
-el menú `res://scenes/start_menu.tscn`. Pulsar **Entrar a la isla** para jugar.
-F/F11 alterna pantalla completa y ventana. El fondo del menú no carga ni guarda
-la memoria del gato. Para abrir la isla directamente, ejecutar `scenes/main.tscn` con F6.
+Abrir el proyecto en Godot 4.7 y pulsar **F5** (escena `res://scenes/main.tscn`).
 
 | Tecla / ratón | Acción |
 |---|---|
@@ -38,8 +35,7 @@ la memoria del gato. Para abrir la isla directamente, ejecutar `scenes/main.tscn
 
 ## Estructura
 ```
-scenes/start_menu.tscn    pantalla inicial (arranque F5)
-scenes/main.tscn          isla jugable
+scenes/main.tscn          escena principal
 scripts/cat/cat.gd        cerebro, voz y animación del gato
 assets/cat/              atlas limpios usados en el juego (celdas de 112×112)
 assets/generated/        originales y metadatos de generación
