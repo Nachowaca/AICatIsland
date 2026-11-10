@@ -186,7 +186,7 @@ func _build() -> void:
 ## Resume lo que el gato aprendió probando: qué cosa+verbo sube o baja qué necesidad.
 func _discoveries_text() -> String:
 	if cat.experimental_mode and cat.free_brain != null:
-		return "Aprende por objeto, verbo, zona y contexto.\n%d experiencias distintas · %d lugares recordados.\nEl detalle queda en el registro local." % [cat.free_brain.memory.size(), cat.free_brain.places.size()]
+		return "Aprende por experiencia y reconoce apariencias similares.\n%d experiencias · %d modelos compartidos.\n%d lugares recordados · %d pescados comidos." % [cat.free_brain.memory.size(), cat.free_brain.models.size(), cat.free_brain.places.size(), int(cat.stats.fish_eaten)]
 	if cat.knowledge.is_empty():
 		return "Aún no ha probado nada. Todo es misterio."
 	var rows: Array = []

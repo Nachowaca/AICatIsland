@@ -13,6 +13,9 @@ var island: Island
 func _setup() -> void:
 	var tree: SceneTree = Engine.get_main_loop() as SceneTree
 	main = (load("res://scenes/main.tscn") as PackedScene).instantiate() as Node2D
+	main.initial_fish = 0
+	main.max_fish = 3
+	main.spawn_interval = 22.0
 	cat = main.get_node("Entities/Cat") as Cat
 	cat.persist_brain = false # cerebro nuevo, no toca la partida guardada
 	cat.experimental_mode = false # regresión del cerebro clásico, no del experimento

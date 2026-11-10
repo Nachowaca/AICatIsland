@@ -1,8 +1,12 @@
+class_name IslandGame
 extends Node2D
 ## Controlador principal: aparición de pescado, cámara y controles de observación.
 
-@export var max_fish: int = 3
-@export var spawn_interval: float = 22.0
+@export var max_fish: int = 12
+@export var initial_fish: int = 8
+@export var spawn_interval: float = 8.0
+
+const FISH_SEPARATION: float = 1.3
 
 @onready var island: Island = $Island
 @onready var entities: Node2D = $Entities
@@ -18,6 +22,7 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 func _ready() -> void:
 	_rng.randomize()
 	_snap_fish_to_shore()
+	_supply_fish(clampi(initial_fish, 0, maxi(0, max_fish)))
 
 
 func _process(delta: float) -> void:
@@ -26,42 +31,91 @@ func _process(delta: float) -> void:
 	var dawn: bool = day_night.hour > 5.0 and day_night.hour < 8.5
 	if _spawn_t >= spawn_interval * (0.4 if dawn else 1.0):
 		_spawn_t = 0.0
-		if get_tree().get_nodes_in_group("fish").size() < max_fish:
-			spawn_fish_at(island.shore_pairs[_rng.randi() % island.shore_pairs.size()])
+		_supply_fish(mini(_live_fish().size() + 1, maxi(0, max_fish)))
 	if _follow:
 		var cat: Node2D = get_tree().get_first_node_in_group("cat") as Node2D
 		if cat:
 			camera.position = camera.position.lerp(cat.position, minf(1.0, 3.0 * delta))
 
 
-func spawn_fish_at(pair: Array) -> void:
-	var spots: Array = island.shore_spots(pair)
-	var pos: Vector2 = spots[1]
+## Los peces consumidos no ocupan cupo ni bloquean su antigua posición.
+func _live_fish() -> Array[Fish]:
+	var out: Array[Fish] = []
 	for n: Node in get_tree().get_nodes_in_group("fish"):
-		if (n as Fish).grid_pos.distance_to(pos) < 0.6:
-			return
+		if n is Fish and not n.is_queued_for_deletion():
+			out.append(n as Fish)
+	return out
+
+
+func _valid_shore_spots(pair: Array) -> Array:
+	if not island.shore_pairs.has(pair):
+		return []
+	var spots: Array = island.shore_spots(pair)
+	if not island.is_walkable(spots[0]):
+		return []
+	return spots
+
+
+func _fish_space_free(pos: Vector2, fish: Array[Fish]) -> bool:
+	for f: Fish in fish:
+		if f.grid_pos.distance_to(pos) < FISH_SEPARATION:
+			return false
+	return true
+
+
+## Tanto el suministro automático como los clics pasan por el mismo contrato.
+func spawn_fish_at(pair: Array) -> bool:
+	var fish: Array[Fish] = _live_fish()
+	if fish.size() >= maxi(0, max_fish):
+		return false
+	var spots: Array = _valid_shore_spots(pair)
+	if spots.is_empty() or not _fish_space_free(spots[1], fish):
+		return false
 	var f: Fish = Fish.new()
 	f.name = "Fish"
-	f.grid_pos = pos
+	f.grid_pos = spots[1]
 	f.land_spot = spots[0]
 	entities.add_child(f, true)
+	return true
 
 
-## Recoloca los pescados puestos a mano en la escena sobre la costa real.
+## Una pasada aleatoria sin reemplazo: intentos acotados incluso con costa llena.
+func _supply_fish(target: int) -> void:
+	if _live_fish().size() >= target:
+		return
+	var pairs: Array = island.shore_pairs.duplicate()
+	for i: int in range(pairs.size() - 1, 0, -1):
+		var j: int = _rng.randi_range(0, i)
+		var tmp: Array = pairs[i]
+		pairs[i] = pairs[j]
+		pairs[j] = tmp
+	for pair: Array in pairs:
+		if _live_fish().size() >= mini(target, maxi(0, max_fish)):
+			break
+		spawn_fish_at(pair)
+
+
+## Conserva los peces de escena cuando caben, sin apilarlos al ajustar la costa.
 func _snap_fish_to_shore() -> void:
-	for n: Node in get_tree().get_nodes_in_group("fish"):
-		var f: Fish = n as Fish
+	var placed: Array[Fish] = []
+	for f: Fish in _live_fish():
 		var best: Array = []
 		var bd: float = INF
-		for pair: Array in island.shore_pairs:
-			var dd: float = (pair[0] as Vector2).distance_to(f.grid_pos)
-			if dd < bd:
-				bd = dd
-				best = pair
-		if not best.is_empty():
-			var spots: Array = island.shore_spots(best)
-			f.grid_pos = spots[1]
-			f.land_spot = spots[0]
+		if placed.size() < maxi(0, max_fish):
+			for pair: Array in island.shore_pairs:
+				var spots: Array = _valid_shore_spots(pair)
+				if spots.is_empty() or not _fish_space_free(spots[1], placed):
+					continue
+				var dd: float = (spots[1] as Vector2).distance_to(f.grid_pos)
+				if dd < bd:
+					bd = dd
+					best = spots
+		if best.is_empty():
+			f.queue_free()
+		else:
+			f.grid_pos = best[1]
+			f.land_spot = best[0]
+			placed.append(f)
 
 
 func _unhandled_input(event: InputEvent) -> void:

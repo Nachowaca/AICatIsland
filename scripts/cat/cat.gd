@@ -174,7 +174,10 @@ func _process(delta: float) -> void:
 func _update_needs(delta: float) -> void:
 	var sleeping: bool = (action == "sleep" or (experimental_mode and pose == "sleep")) and phase == Phase.DOING
 	var walking: bool = phase == Phase.MOVING
-	needs.hunger -= 0.7 * delta * (0.5 if sleeping else 1.0)
+	var satiety_decay: float = 0.7
+	if experimental_mode and free_brain != null:
+		satiety_decay = free_brain.satiety_decay_per_second()
+	needs.hunger -= satiety_decay * delta * (0.5 if sleeping else 1.0)
 	if not sleeping:
 		var energy_decay: float = (0.45 + (0.25 if walking else 0.0))
 		if experimental_mode and free_brain != null:
