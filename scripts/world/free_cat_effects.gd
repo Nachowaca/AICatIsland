@@ -5,7 +5,7 @@ extends RefCounted
 static func respond(target: Node2D, verb: String, dt: float, elapsed: float, night: bool) -> Dictionary:
 	var effect: Dictionary = {}
 	if verb == "lie":
-		effect = {"energy": 4.5, "comfort": 0.5}
+		effect = {"comfort": 0.5} # Descanso despierto; la recuperación del sueño es aparte.
 	elif verb == "groom":
 		effect = {"comfort": 3.0, "fun": 0.5}
 	if not is_instance_valid(target):

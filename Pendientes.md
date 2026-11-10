@@ -109,3 +109,8 @@ Medido (5 gatos, 2 días): prueban 18–25 combinaciones, el 1er hallazgo llega 
 - [x] Experimento: aprendizaje compartido por apariencia/verbo, sin conocimiento alimentario previo; manejo de observaciones saturadas.
 - [x] Costa con 8 pescados iniciales, tope 12 y reposición cada 8 s; saciedad experimental configurable (6 min para gastar 100).
 - [ ] Medir en vivo primera ingesta y alimentación sostenida en varias semillas, sin indicar dónde ir ni qué morder.
+
+- [x] Sueño experimental separado del descanso: fatiga base de 8 horas de isla y umbral de energía <10; despertar a 85 y urgencias con histéresis.
+- [x] Plan de textos por actividad y contexto: PLAN_TEXTOS_GATITO.md (sin implementar).
+- [ ] Escoger un lugar seguro aprendido para dormir; interrupción general, memoria espacial de recursos y planes de varios pasos.
+- [ ] Observar en vivo varias semillas: alimentación, sueño, necesidades críticas y bloqueo de sueño.

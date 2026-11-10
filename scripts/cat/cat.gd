@@ -172,7 +172,7 @@ func _process(delta: float) -> void:
 # ================================================================ NECESIDADES
 
 func _update_needs(delta: float) -> void:
-	var sleeping: bool = (action == "sleep" or (experimental_mode and pose == "sleep")) and phase == Phase.DOING
+	var sleeping: bool = (free_brain != null and free_brain.sleeping) if experimental_mode else (action == "sleep" and phase == Phase.DOING)
 	var walking: bool = phase == Phase.MOVING
 	var satiety_decay: float = 0.7
 	if experimental_mode and free_brain != null:
@@ -1093,7 +1093,7 @@ func _build_sprite() -> void:
 func _apply_pose(delta: float) -> void:
 	if _sprite == null:
 		return
-	var anim: String = POSE_ANIM.get(pose, "idle")
+	var anim: String = "idle" if experimental_mode and pose == "loaf" else POSE_ANIM.get(pose, "idle")
 	if not _sprite.sprite_frames.has_animation(anim):
 		return
 	if _sprite.animation != anim:

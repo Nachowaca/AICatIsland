@@ -7,17 +7,24 @@ class BodyStub:
 	var needs: Dictionary = {"hunger": 10.0, "energy": 50.0, "fun": 50.0, "safety": 50.0, "comfort": 50.0}
 	var grid_pos: Vector2 = Vector2.ZERO
 	var persist_brain: bool = false
+	var _day_night: DayNight = null
 	func _log(_message: String) -> void:
 		pass
 
-func test_desgaste_base_equivale_a_diez_minutos() -> void:
+func test_desgaste_ocho_horas_isla() -> void:
 	var brain: FreeCatBrain = FreeCatBrain.new()
-	assert(is_equal_approx(brain.energy_decay_per_second() * 600.0, 100.0))
-	brain.fatigue_minutes = 20.0
-	assert(is_equal_approx(brain.energy_decay_per_second() * 600.0, 50.0))
-	brain.fatigue_minutes = 0.0
-	assert(brain.energy_decay_per_second() > 0.0)
+	var body: BodyStub = BodyStub.new()
+	var clock: DayNight = DayNight.new()
+	brain.cat = body
+	body._day_night = clock
+	for day: float in [240.0, 2400.0, 120.0]:
+		clock.day_length_sec = day
+		assert(is_equal_approx(brain.energy_decay_per_second() * day / 3.0, 90.0))
+		for speed: float in [1.0, 4.0, 10.0]:
+			assert(is_equal_approx(brain.energy_decay_per_second() * (day / 3.0 / speed) * speed, 90.0))
 	brain.free()
+	body.free()
+	clock.free()
 
 func test_no_nace_sabiendo_que_morder_alimenta() -> void:
 	var body: BodyStub = BodyStub.new()
@@ -136,6 +143,7 @@ func test_saciedad_base_de_seis_minutos() -> void:
 
 func test_curiosidad_decrece_con_repeticion_y_respeta_contexto() -> void:
 	var body: BodyStub = BodyStub.new()
+	body.needs.hunger = 50.0
 	var brain: FreeCatBrain = FreeCatBrain.new()
 	brain.cat = body
 	brain.curiosity = 1.0
@@ -145,5 +153,62 @@ func test_curiosidad_decrece_con_repeticion_y_respeta_contexto() -> void:
 	var unknown: Dictionary = brain.candidate("objeto:lie:noche", "lie", Vector2.ZERO, "")
 	assert(float(unknown.score) > float(familiar.score))
 	assert(is_equal_approx(float(familiar.score), 0.2))
+	brain.free()
+	body.free()
+
+func test_sueno_umbral_histeresis_e_interrupcion() -> void:
+	var body: BodyStub = BodyStub.new()
+	var brain: FreeCatBrain = FreeCatBrain.new()
+	brain.cat = body
+	body.needs.hunger = 80.0
+	body.needs.safety = 80.0
+	body.needs.energy = 10.0
+	assert(not brain.update_sleep_state())
+	brain.active = true
+	body.needs.energy = 9.9
+	assert(brain.update_sleep_state())
+	assert(not brain.active and brain.memory.is_empty())
+	body.needs.energy = 84.9
+	assert(brain.update_sleep_state())
+	body.needs.hunger = 9.0
+	assert(not brain.update_sleep_state())
+	assert(brain.sleep_blocked)
+	body.needs.energy = 1.0
+	assert(not brain.update_sleep_state())
+	body.needs.hunger = 20.0
+	assert(brain.update_sleep_state())
+	body.needs.energy = 85.0
+	assert(not brain.update_sleep_state())
+	brain.free()
+	body.free()
+
+func test_descanso_no_es_sueno_y_prioridad_es_aprendida() -> void:
+	var body: BodyStub = BodyStub.new()
+	var brain: FreeCatBrain = FreeCatBrain.new()
+	brain.cat = body
+	brain.travel_cost = 0.0
+	body.needs.hunger = 50.0
+	var novel_normal: float = float(brain.candidate("x", "bite", Vector2.ZERO, "").score)
+	brain.memory["y"] = {"n": 1, "effects": {"hunger": 1.0}}
+	var normal: float = float(brain.candidate("y", "paw", Vector2.ZERO, "").score)
+	body.needs.hunger = 1.0
+	var novel_critical: float = float(brain.candidate("x", "bite", Vector2.ZERO, "").score)
+	var critical: float = float(brain.candidate("y", "paw", Vector2.ZERO, "").score)
+	assert(novel_critical < novel_normal and critical > normal)
+	assert(not FreeCatEffects.respond(null, "lie", 1.0, 1.0, false).has("energy"))
+	brain.free()
+	body.free()
+
+func test_reporte_preserva_datos_y_estado() -> void:
+	var body: BodyStub = BodyStub.new()
+	var brain: FreeCatBrain = FreeCatBrain.new()
+	brain.cat = body
+	brain._loaded_report = {"dato_futuro": {"valor": 3}}
+	brain.sleeping = true
+	brain.sleep_blocked = true
+	brain.memory = {"anterior": {"n": 1}}
+	var saved: Dictionary = brain.report()
+	assert(saved.dato_futuro.valor == 3 and saved.memory.has("anterior"))
+	assert(saved.sleeping and saved.sleep_blocked and saved.needs == body.needs)
 	brain.free()
 	body.free()

@@ -6,8 +6,10 @@ const Effects = preload("res://scripts/world/free_cat_effects.gd")
 const VERBS = ["sniff", "dig", "paw", "bite", "lie", "groom"]
 const MEMORY_PATH = "user://gatito_free_brain_v1.json"
 
-## Minutos de juego para gastar 100 de energía despierto, sin esfuerzos adicionales.
-@export_range(1.0, 60.0) var fatigue_minutes: float = 10.0
+## Horas de isla despierto para gastar 90 de energía, sin efectos adicionales.
+@export_range(0.1, 48.0) var awake_island_hours: float = 8.0
+@export_range(0.01, 20.0) var sleep_recovery_per_second: float = 4.5
+@export_range(10.0, 100.0) var sleep_wake_energy: float = 85.0
 ## Tiempo despierto para gastar 100 de saciedad; no asigna comida a ningún verbo.
 @export_range(1.0, 60.0) var satiety_minutes: float = 6.0
 @export var experiment_seed: int = 0
@@ -37,6 +39,9 @@ var label: String = "Observando"
 var minimums: Dictionary = {}
 var elapsed_world: float = 0.0
 var _save_timer: float = 0.0
+var sleeping: bool = false
+var sleep_blocked: bool = false
+var _loaded_report: Dictionary = {}
 
 func setup(host: Node2D) -> void:
 	cat = host
@@ -51,6 +56,13 @@ func setup(host: Node2D) -> void:
 	if cat.persist_brain and FileAccess.file_exists(MEMORY_PATH):
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MEMORY_PATH))
 		if parsed is Dictionary:
+			_loaded_report = parsed.duplicate(true)
+			if parsed.get("needs", null) is Dictionary:
+				for need: String in cat.needs:
+					if parsed.needs.has(need):
+						cat.needs[need] = clampf(float(parsed.needs[need]), 0.0, 100.0)
+			sleeping = bool(parsed.get("sleeping", false))
+			sleep_blocked = bool(parsed.get("sleep_blocked", false))
 			memory = parsed.get("memory", {})
 			models = parsed.get("models", {})
 			places = parsed.get("places", {})
@@ -59,7 +71,30 @@ func setup(host: Node2D) -> void:
 	choose()
 
 func energy_decay_per_second() -> float:
-	return 100.0 / (maxf(fatigue_minutes, 1.0) * 60.0)
+	var day_seconds: float = 240.0
+	if is_instance_valid(cat) and cat._day_night != null:
+		day_seconds = maxf(float(cat._day_night.day_length_sec), 0.01)
+	return 90.0 / (day_seconds * maxf(awake_island_hours, 0.1) / 24.0)
+
+## La interrupción queda bloqueada hasta que ambas necesidades se recuperen.
+func update_sleep_state() -> bool:
+	var critical: bool = float(cat.needs.hunger) < 10.0 or float(cat.needs.safety) < 10.0
+	if sleep_blocked and float(cat.needs.hunger) >= 20.0 and float(cat.needs.safety) >= 20.0:
+		sleep_blocked = false
+	if sleeping:
+		if critical:
+			sleeping = false
+			sleep_blocked = true
+		elif float(cat.needs.energy) >= maxf(sleep_wake_energy, 10.0):
+			sleeping = false
+	elif float(cat.needs.energy) < 10.0 and not critical and not sleep_blocked:
+		sleeping = true
+		active = false # Ensayo incompleto: nunca aprender del sueño.
+	return sleeping
+
+func critical_urgency() -> float:
+	var lowest: float = minf(float(cat.needs.hunger), float(cat.needs.safety))
+	return clampf((35.0 - lowest) / 35.0, 0.0, 1.0)
 
 func satiety_decay_per_second() -> float:
 	return 100.0 / (maxf(satiety_minutes, 1.0) * 60.0)
@@ -101,7 +136,8 @@ func candidate(key: String, verb: String, point: Vector2, path: String, appearan
 	var local: Dictionary = memory.get(key, {})
 	var general: Dictionary = models.get(model_key, {})
 	var count: int = maxi(int(local.get("n", 0)), int(general.get("n", 0)))
-	var score: float = curiosity / sqrt(float(count + 1))
+	var critical: float = critical_urgency()
+	var score: float = curiosity * (1.0 - 0.9 * critical) / sqrt(float(count + 1))
 	# Combina lo vivido aquí con lo experimentado en ejemplares parecidos.
 	var effects: Dictionary = (general.get("effects", {}) as Dictionary).duplicate()
 	var local_effects: Dictionary = local.get("effects", {})
@@ -109,7 +145,10 @@ func candidate(key: String, verb: String, point: Vector2, path: String, appearan
 		effects[need] = lerpf(float(effects[need]), float(local_effects[need]), 0.6) if effects.has(need) else local_effects[need]
 	for need: String in cat.needs:
 		var urgency: float = pow(1.0 - float(cat.needs[need]) / 100.0, 1.6)
-		score += float(effects.get(need, 0.0)) * (urgency + 0.05) * float(need_weights.get(need, 1.0)) / 5.0
+		var priority: float = 1.0
+		if need == "hunger" or need == "safety":
+			priority += 4.0 * clampf((35.0 - float(cat.needs[need])) / 35.0, 0.0, 1.0)
+		score += float(effects.get(need, 0.0)) * (urgency + 0.05) * priority * float(need_weights.get(need, 1.0)) / 5.0
 	score -= cat.grid_pos.distance_to(point) * travel_cost
 	var evidence: String = "local" if not local.is_empty() else ("similar" if not general.is_empty() else "unknown")
 	return {"key": key, "model_key": model_key, "evidence": evidence, "verb": verb, "x": point.x, "y": point.y, "path": path, "score": score}
@@ -146,7 +185,7 @@ func choose() -> void:
 	for option: Dictionary in options:
 		if float(option.score) > float(best.score):
 			best = option
-	if rng.randf() < random_choice:
+	if rng.randf() < random_choice * (1.0 - 0.9 * critical_urgency()):
 		best = options[rng.randi_range(0, options.size() - 1)]
 	choice = best.duplicate()
 	rankings = options.duplicate()
@@ -168,6 +207,19 @@ func tick(dt: float) -> void:
 	if _save_timer >= 20.0:
 		_save_timer = 0.0
 		save()
+	var was_sleeping: bool = sleeping
+	if update_sleep_state():
+		cat.action = "free_sleep"
+		cat.phase = 1
+		cat.pose = "sleep"
+		label = "Durmiendo"
+		cat.needs.energy = float(cat.needs.energy) + sleep_recovery_per_second * dt
+		cat._clamp_needs()
+		return
+	if was_sleeping:
+		cat.pose = "sit"
+		choose()
+		return
 	if cat.phase == 0:
 		cat._move(dt)
 		return
@@ -176,7 +228,7 @@ func tick(dt: float) -> void:
 		active = true
 	elapsed += dt
 	var verb: String = choice.get("verb", "sniff")
-	cat.pose = {"sniff": "eat", "bite": "eat", "dig": "dig", "paw": "play", "lie": "sleep", "groom": "groom"}[verb]
+	cat.pose = {"sniff": "eat", "bite": "eat", "dig": "dig", "paw": "play", "lie": "sit", "groom": "groom"}[verb]
 	var target: Node2D = null
 	if choice.path != "":
 		target = cat.get_node_or_null(NodePath(choice.path)) as Node2D
@@ -239,9 +291,12 @@ func finish_trial() -> void:
 	active = false
 
 func report() -> Dictionary:
-	return {"version": 2, "seed": actual_seed, "completed_trials": completed_trials,
-		"parameters": {"fatigue_minutes": fatigue_minutes, "satiety_minutes": satiety_minutes, "curiosity": curiosity, "random_choice": random_choice, "learning_rate": learning_rate, "perception_radius": perception_radius, "travel_cost": travel_cost, "trial_seconds": trial_seconds, "need_weights": need_weights},
-		"minimums": minimums, "memory": memory, "models": models, "places": places, "recent_trials": history}
+	var data: Dictionary = _loaded_report.duplicate(true)
+	data.merge({"version": 3, "seed": actual_seed, "completed_trials": completed_trials,
+		"parameters": {"awake_island_hours": awake_island_hours, "sleep_recovery_per_second": sleep_recovery_per_second, "sleep_wake_energy": sleep_wake_energy, "satiety_minutes": satiety_minutes, "curiosity": curiosity, "random_choice": random_choice, "learning_rate": learning_rate, "perception_radius": perception_radius, "travel_cost": travel_cost, "trial_seconds": trial_seconds, "need_weights": need_weights},
+		"needs": cat.needs.duplicate(), "sleeping": sleeping, "sleep_blocked": sleep_blocked,
+		"minimums": minimums, "memory": memory, "models": models, "places": places, "recent_trials": history}, true)
+	return data
 
 func save() -> void:
 	if not is_instance_valid(cat) or not cat.persist_brain:

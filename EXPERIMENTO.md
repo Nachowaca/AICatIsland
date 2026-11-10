@@ -7,7 +7,9 @@ No se promete supervivencia, conciencia ni inteligencia general.
 
 ## Variables libres
 Seleccionar `Entities/Cat/FreeBrain` en main.tscn y modificar en el Inspector:
-- `fatigue_minutes`: minutos de juego para gastar 100 de energía despierto (10). Desgaste gradual; caminar no añade el recargo clásico. Jugar y otros efectos del mundo sí pueden gastar energía adicional. A x10, diez minutos de juego duran uno real.
+- `awake_island_hours`: horas despierto para gastar 90 puntos de energía base (8); depende de la duración del día. Desde 100, alcanza 10 tras 8 horas de isla sin efectos adicionales.
+- `sleep_recovery_per_second`: energía por segundo de juego mientras duerme (4.5).
+- `sleep_wake_energy`: energía objetivo para despertar (85).
 - `satiety_minutes`: minutos despierto para gastar 100 de saciedad (6); desde 75 inicial, unos 4.5 minutos sin comer, con menor gasto dormido.
 - `experiment_seed`: 0 elige una semilla; un entero fijo controla el RNG del selector.
 - `curiosity`: bonificación por ensayos poco conocidos (0.7 inicial).
@@ -76,3 +78,13 @@ Cambiar parámetros no borra el aprendizaje: usar R para una comparación desde 
 - Para comparar desde cero: entrar al juego y pulsar R; solo borra memoria experimental, no reinicia necesidades ni el mundo.
 - 28 pruebas aprobadas, incluido suministro, transferencia entre ejemplares/contextos y barras saturadas.
 - Vista dev ejecutada sin errores con peces distribuidos; todavía no se ha demostrado alimentación autónoma sostenida con varias semillas.
+
+## Sueño y prioridades vitales
+- El descanso `lie` mantiene al gato despierto y usa pose sentada; ya no otorga la recuperación corporal del sueño.
+- Debajo de 10 de energía entra en sueño donde está, salvo hambre o seguridad por debajo de 10; despierta al recuperar 85 por defecto. Aún no elige un lugar seguro para dormir.
+- Hambre o seguridad críticas interrumpen el sueño y bloquean otro hasta recuperar ambas a 20. Este bloqueo puede impedir dormir indefinidamente si no resuelve la necesidad.
+- La fatiga base equivale a 90 puntos en ocho horas de isla; otros efectos pueden variar el resultado. El tiempo de isla avanza con la velocidad del juego.
+- Al empeorar hambre/seguridad aumenta el peso de efectos ya aprendidos y disminuyen azar y novedad; no se le dice qué objeto es comida. No hay interrupción general de acciones despierto ni planes de varios pasos todavía.
+- Se guardan las necesidades y el estado de sueño con la memoria experimental; una partida vieja sin esos campos conserva valores iniciales. R borra aprendizaje, no reinicia necesidades.
+- La supervivencia sostenida y los patrones de sueño aún requieren observación en vivo; las pruebas unitarias no la demuestran.
+- Plan de expresión propuesto en PLAN_TEXTOS_GATITO.md; todavía no se implementa.
