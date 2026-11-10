@@ -9,3 +9,13 @@
 # Sistema
 .DS_Store
 *.tmp
+
+# Claude Code Game Studios: archivos locales de cada sesión
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.claude/agent-memory/
+.claude/worktrees/
+.scratch/
